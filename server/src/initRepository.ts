@@ -5,6 +5,7 @@ import {
   ChatRepo,
   CommentRepo,
   GameRepo,
+  LeaderboardRepo,
   MessageRepo,
   ThreadRepo,
   UserRepo,
@@ -12,6 +13,7 @@ import {
 import type { GameRecord, ThreadRecord } from "./models.ts";
 import { createChat } from "./services/chat.service.ts";
 import { createUser, updateUser } from "./services/user.service.ts";
+import { updateLeaderboard } from "./services/leaderboard.service.ts";
 
 /** Reset stored games with example data. */
 async function resetStoredGames() {
@@ -117,11 +119,22 @@ async function resetStoredUsers() {
   await updateUser("user3", { display: "Frau Drei" });
 }
 
+/** Reset stored leaderboard with example data */
+async function resetStoredLeaderboard() {
+  const user2id = (await getUserByUsername("user2"))!.userId;
+  const user3id = (await getUserByUsername("user3"))!.userId;
+
+  // Add some sample leaderboard entries
+  await updateLeaderboard(user2id, "nim", false); // user2 lost a nim game
+  await updateLeaderboard(user3id, "nim", true); // user3 won a nim game
+}
+
 export async function resetEverythingToDefaults() {
   await AuthRepo.clear();
   await ChatRepo.clear();
   await CommentRepo.clear();
   await GameRepo.clear();
+  await LeaderboardRepo.clear();
   await MessageRepo.clear();
   await ThreadRepo.clear();
   await UserRepo.clear();
@@ -129,4 +142,5 @@ export async function resetEverythingToDefaults() {
   await resetStoredUsers();
   await resetStoredThreads();
   await resetStoredGames();
+  await resetStoredLeaderboard();
 }
