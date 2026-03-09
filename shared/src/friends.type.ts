@@ -18,6 +18,11 @@ export interface FriendRequestInfo {
 
 export type CreateFriendRequest = z.infer<typeof zCreateFriendRequest>;
 export const zCreateFriendRequest = z.object({
-  from: z.string(),
   to: z.string(),
+});
+
+export type UpdateFriendRequest = z.infer<typeof zUpdateFriendRequest>;
+export const zUpdateFriendRequest = z.object({
+  status: z.enum(["accepted", "rejected"]),
+  id: z.string(),
 });

@@ -2,6 +2,7 @@ import { type CreateFriendRequest, type FriendRequestInfo } from "@gamenite/shar
 import { FriendRequestRepo } from "../repository.ts";
 import { populateSafeUserInfo } from "./user.service.ts";
 import type { UserWithId } from "../types.ts";
+import { createFriend } from "./friends.service.ts";
 
 async function populateFriendRequestInfo(friendRequestId: string): Promise<FriendRequestInfo> {
   const friendRequest = await FriendRequestRepo.get(friendRequestId);
@@ -15,7 +16,8 @@ async function populateFriendRequestInfo(friendRequestId: string): Promise<Frien
 }
 
 export async function createFriendRequest(
-  { from, to }: CreateFriendRequest,
+  from: string,
+  { to }: CreateFriendRequest,
   createdAt: Date,
 ): Promise<FriendRequestInfo> {
   const id = await FriendRequestRepo.add({
@@ -35,11 +37,11 @@ export async function getFriendRequestById(
   return populateFriendRequestInfo(friendRequestId);
 }
 
-export async function getFriendRequestsForUser(userId: UserWithId): Promise<FriendRequestInfo[]> {
+export async function getFriendRequestsByUsername(username: string): Promise<FriendRequestInfo[]> {
   const keys = await FriendRequestRepo.getAllKeys();
   const unfiltered = await Promise.all(keys.map(populateFriendRequestInfo));
   const unsorted = unfiltered.filter((friendRequest) => {
-    return friendRequest.to.username === userId.username;
+    return friendRequest.to.username === username;
   });
 
   return unsorted.toSorted(
@@ -64,5 +66,11 @@ export async function updateFriendRequest(
   }
 
   await FriendRequestRepo.set(friendRequestId, { ...friendRequest, status: status });
+
+  if (status === "accepted") {
+    await createFriend(friendRequest.from, friendRequest.to, new Date());
+    await createFriend(friendRequest.to, friendRequest.from, new Date());
+  }
+
   return populateFriendRequestInfo(friendRequestId);
 }
