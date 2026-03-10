@@ -6,6 +6,7 @@ import { nimGameService } from "../games/nim.ts";
 import { guessGameService } from "../games/guess.ts";
 import { type GameViewUpdates, type UserWithId } from "../types.ts";
 import { GameRepo } from "../repository.ts";
+import { updateLeaderboard } from "./leaderboard.service.ts";
 
 /**
  * The service interface for individual games
@@ -178,12 +179,24 @@ export async function updateGame(
   if (playerIndex < 0) {
     throw new Error(`user ${user.username} made a move in a game they weren't playing`);
   }
+
+  const wasDone = game.done;
   const result = gameServices[game.type].update(game.state, move, playerIndex, game.players);
   if (!result) throw new Error(`user ${user.username} made an invalid move in ${game.type}`);
 
   game.state = result.state;
   game.done = game.done || result.done;
   await GameRepo.set(gameId, game);
+
+  // Update leaderboard if the game just finished
+  if (!wasDone && game.done) {
+    const winners = gameServices[game.type].getWinners(game.state);
+    for (let i = 0; i < game.players.length; i++) {
+      const playerUserId = game.players[i];
+      const won = winners.includes(i);
+      await updateLeaderboard(playerUserId, game.type, won);
+    }
+  }
 
   return {
     views: result.views,

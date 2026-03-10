@@ -53,6 +53,14 @@ export interface GameServicer {
     done: boolean;
     moveDescription: string;
   };
+
+  /**
+   * Gets the winners of a game that just finished,
+   * for the purpose of updating the leaderboard.
+   * @param state - The game state (must be the structure the underlying game expects — TypeScript won't check this!)
+   * @returns the indices of the winning players in the game, or an empty array if there are no winners or the game isn't done
+   */
+  getWinners: (state: any) => number[];
 }
 
 export class GameService<State, View> implements GameServicer {
@@ -103,5 +111,10 @@ export class GameService<State, View> implements GameServicer {
   view(state: any, playerIndex: number) {
     if (!state) throw new Error("Game state does not exist");
     return this._view(state, playerIndex);
+  }
+
+  getWinners(state: any) {
+    if (!state) throw new Error("Game state does not exist");
+    return this._logic.getWinners(state);
   }
 }

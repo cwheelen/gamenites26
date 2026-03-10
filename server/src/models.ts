@@ -82,6 +82,20 @@ export interface GameRecord {
 }
 
 /**
+ * Represents a leaderboard entry in the database.
+ */
+export interface LeaderboardRecord {
+  userId: RecordId; // References User records
+  gameType: GameKey; // Which game this leaderboard entry belongs to
+  wins: number;
+  losses: number;
+  gamesPlayed: number;
+  currentStreak: number;
+  longestStreak: number;
+  lastUpdated: DateISO;
+}
+
+/**
  * Represents a message in the database.
  * - `text`: message contents
  * - `createdBy`: username of message sender

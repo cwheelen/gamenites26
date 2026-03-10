@@ -6,6 +6,7 @@ import { z } from "zod";
 import * as http from "node:http";
 import * as chat from "./controllers/chat.controller.ts";
 import * as game from "./controllers/game.controller.ts";
+import * as leaderboard from "./controllers/leaderboard.controller.ts";
 import * as user from "./controllers/user.controller.ts";
 import * as thread from "./controllers/thread.controller.ts";
 import { type GameServer } from "./types.ts";
@@ -26,6 +27,13 @@ app.use(
         .post("/create", game.postCreate)
         .get("/list", game.getList)
         .get("/:id", game.getById),
+    )
+    .use(
+      "/leaderboard",
+      express
+        .Router() //
+        .get("/:gameType", leaderboard.getByGameType)
+        .get("/user/:username/:gameType", leaderboard.getUserStats),
     )
     .use(
       "/thread",
