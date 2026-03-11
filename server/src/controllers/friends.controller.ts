@@ -2,6 +2,7 @@ import {
   withAuth,
   zCreateFriendRequest,
   zUpdateFriendRequest,
+  type FriendInfo,
   type FriendRequestInfo,
 } from "@gamenite/shared";
 import {
@@ -11,7 +12,13 @@ import {
   updateFriendRequest,
 } from "../services/friendRequest.service.ts";
 import type { RestAPI } from "../types.ts";
-import { checkAuth } from "../services/auth.service.ts";
+import { checkAuth, getUserByUsername } from "../services/auth.service.ts";
+import {
+  deleteFriendById,
+  getFriendshipById,
+  getFriendshipsById,
+} from "../services/friends.service.ts";
+import { populateSafeUserInfo } from "../services/user.service.ts";
 
 export const postCreateFriendRequest: RestAPI<FriendRequestInfo> = async (req, res) => {
   const body = withAuth(zCreateFriendRequest).safeParse(req.body);
@@ -29,7 +36,7 @@ export const postCreateFriendRequest: RestAPI<FriendRequestInfo> = async (req, r
 };
 
 export const getFriendRequest: RestAPI<FriendRequestInfo> = async (req, res) => {
-  const friendRequest = await getFriendRequestById(req.params.friendRequestId);
+  const friendRequest = await getFriendRequestById(req.params.id);
 
   if (!friendRequest) {
     res.status(404).send({ error: "Friend Request not found" });
@@ -55,4 +62,39 @@ export const putUpdateFriendRequest: RestAPI<FriendRequestInfo> = async (req, re
   }
 
   res.send(await updateFriendRequest(body.data.payload.id, user, body.data.payload.status));
+};
+
+export const postCreateFriend: RestAPI<FriendInfo> = async (req, res) => {};
+
+export const getFriend: RestAPI<FriendInfo> = async (req, res) => {
+  const friend = await getFriendshipById(req.params.id);
+
+  if (!friend) {
+    res.status(404).send({ error: "Friend not found" });
+    return;
+  }
+
+  res.send(friend);
+};
+
+export const getFriendList: RestAPI<FriendInfo[]> = async (req, res) => {
+  res.send(await getFriendshipsById(await populateSafeUserInfo(req.params.id)));
+};
+
+export const deleteFriend: RestAPI<FriendInfo> = async (req, res) => {
+  const { id, username } = req.params;
+
+  const user = await getUserByUsername(username);
+  if (!user) {
+    res.status(404).send({ error: "User not found" });
+    return;
+  }
+
+  const friend = await getFriendshipById(id);
+  if (!friend) {
+    res.status(404).send({ error: "Friendship record not found" });
+    return;
+  }
+
+  await deleteFriendById(id, user.userId);
 };

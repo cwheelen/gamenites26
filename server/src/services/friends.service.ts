@@ -1,14 +1,15 @@
-import type { FriendInfo } from "@gamenite/shared";
+import type { FriendInfo, SafeUserInfo } from "@gamenite/shared";
 import { FriendshipRepo } from "../repository.ts";
 import { populateSafeUserInfo } from "./user.service.ts";
-import type { UserWithId } from "../types.ts";
 
 async function populateFriendInfo(friendId: string): Promise<FriendInfo> {
   const record = await FriendshipRepo.get(friendId);
   return {
     friendId,
-    user: await populateSafeUserInfo(record.user),
-    friend: await populateSafeUserInfo(record.friend),
+    users: await Promise.all([
+      populateSafeUserInfo(record.users[0]),
+      populateSafeUserInfo(record.users[1]),
+    ]),
     createdAt: new Date(record.createdAt),
   };
 }
@@ -23,41 +24,41 @@ export async function createFriend(
   const friend = await populateSafeUserInfo(friendId);
   if (!friend) throw new Error(`No user for id ${friendId}`);
   const id = await FriendshipRepo.add({
-    user: userId,
-    friend: friendId,
+    users: [userId, friendId],
     createdAt: createdAt.toISOString(),
   });
   return populateFriendInfo(id);
 }
 
-export async function getFriendById(friendId: string): Promise<FriendInfo | null> {
+export async function getFriendshipById(friendId: string): Promise<FriendInfo | null> {
   const friend = await FriendshipRepo.find(friendId);
   if (!friend) return null;
   return populateFriendInfo(friendId);
 }
 
-export async function getFriendsById(username: string): Promise<FriendInfo[]> {
+export async function getFriendshipsById(user: SafeUserInfo): Promise<FriendInfo[]> {
   const keys = await FriendshipRepo.getAllKeys();
   const unfiltered = await Promise.all(keys.map(populateFriendInfo));
   const unsorted = unfiltered.filter((friendship) => {
-    return friendship.user.username === username;
+    return friendship.users.includes(user);
   });
 
-  return unsorted.toSorted((friend1, friend2) =>
-    friend1.friend.display.localeCompare(friend2.friend.display),
-  );
+  return unsorted.toSorted((users1, users2) => {
+    const friend1 = users1.users[users1.users.indexOf(user) + (1 % 2)];
+    const friend2 = users2.users[users2.users.indexOf(user) + (1 % 2)];
+    return friend1.display.localeCompare(friend2.display);
+  });
 }
 
-export async function deleteFriendById(friendId: string, user: UserWithId): Promise<boolean> {
-  const friendship = await FriendshipRepo.find(friendId);
+export async function deleteFriendById(friendshipId: string, userId: string): Promise<boolean> {
+  const friendship = await FriendshipRepo.get(friendshipId);
 
   if (!friendship) {
-    throw new Error(`user ${user.username} tried to delete a friendship that doesn't exist`);
+    throw new Error(`user tried to delete a friendship that doesn't exist`);
   }
-  if (friendship.user !== user.userId && friendship.friend !== user.userId) {
-    throw new Error(`user ${user.username} tried to delete a friendship they aren't a part of`);
+  if (!friendship.users.includes(userId)) {
+    throw new Error(`user tried to delete a friendship that wasn't theirs`);
   }
 
-  const success = await FriendshipRepo.delete(friendId);
-  return success;
+  return await FriendshipRepo.delete(friendshipId);
 }

@@ -142,7 +142,6 @@ export interface FriendRequestRecord {
  * - `createdAt`: when the friendship was established
  */
 export interface FriendshipRecord {
-  user: RecordId; // References User records
-  friend: RecordId; // References User records
+  users: [RecordId, RecordId]; // References User records
   createdAt: DateISO;
 }

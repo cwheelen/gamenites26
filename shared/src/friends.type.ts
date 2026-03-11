@@ -3,8 +3,7 @@ import { z } from "zod";
 
 export interface FriendInfo {
   friendId: string;
-  user: SafeUserInfo;
-  friend: SafeUserInfo;
+  users: [SafeUserInfo, SafeUserInfo];
   createdAt: Date;
 }
 

@@ -8,6 +8,7 @@ import * as chat from "./controllers/chat.controller.ts";
 import * as game from "./controllers/game.controller.ts";
 import * as user from "./controllers/user.controller.ts";
 import * as thread from "./controllers/thread.controller.ts";
+import * as friend from "./controllers/friends.controller.ts";
 import { type GameServer } from "./types.ts";
 
 export const app = express();
@@ -44,6 +45,22 @@ app.use(
         .post("/signup", user.postSignup)
         .post("/:username", user.postByUsername)
         .get("/:username", user.getByUsername),
+    )
+    .use(
+      "/friend",
+      Router()
+        .post("/create", friend.postCreateFriend)
+        .get("/list/:id", friend.getFriendList)
+        .get("/:id", friend.getFriend)
+        .delete("/:id/by/:userId", friend.deleteFriend),
+    )
+    .use(
+      "/friendRequest",
+      Router()
+        .post("/create", friend.postCreateFriendRequest)
+        .get("/list/:username", friend.getRequestList)
+        .get("/:id", friend.getFriendRequest)
+        .put("update", friend.putUpdateFriendRequest),
     ),
 );
 
