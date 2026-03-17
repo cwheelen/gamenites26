@@ -1,5 +1,6 @@
 import {
   withAuth,
+  zCreateFriend,
   zCreateFriendRequest,
   zUpdateFriendRequest,
   type FriendInfo,
@@ -14,6 +15,7 @@ import {
 import type { RestAPI } from "../types.ts";
 import { checkAuth, getUserByUsername } from "../services/auth.service.ts";
 import {
+  createFriend,
   deleteFriendById,
   getFriendshipById,
   getFriendshipsById,
@@ -32,7 +34,13 @@ export const postCreateFriendRequest: RestAPI<FriendRequestInfo> = async (req, r
     return;
   }
 
-  res.send(await createFriendRequest(user.userId, body.data.payload, new Date()));
+  const recipeint = await getUserByUsername(body.data.payload.toUsername);
+  if (!recipeint) {
+    res.status(404).send({ error: "Friend does not exist" });
+    return;
+  }
+
+  res.send(await createFriendRequest(user.userId, recipeint.userId, new Date()));
 };
 
 export const getFriendRequest: RestAPI<FriendRequestInfo> = async (req, res) => {
@@ -64,7 +72,33 @@ export const putUpdateFriendRequest: RestAPI<FriendRequestInfo> = async (req, re
   res.send(await updateFriendRequest(body.data.payload.id, user, body.data.payload.status));
 };
 
-export const postCreateFriend: RestAPI<FriendInfo> = async (req, res) => {};
+export const postCreateFriend: RestAPI<FriendInfo> = async (req, res) => {
+  const body = withAuth(zCreateFriend).safeParse(req.body);
+  if (!body.success) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const authUser = await checkAuth(body.data.auth);
+  if (!authUser) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+
+  const user = await getUserByUsername(body.data.payload.username);
+  if (!user) {
+    res.status(404).send({ error: "Friend does not exist" });
+    return;
+  }
+
+  const friend = await getUserByUsername(body.data.payload.friendUsername);
+  if (!friend) {
+    res.status(404).send({ error: "Friend does not exist" });
+    return;
+  }
+
+  res.send(await createFriend(user.userId, friend.userId, new Date()));
+};
 
 export const getFriend: RestAPI<FriendInfo> = async (req, res) => {
   const friend = await getFriendshipById(req.params.id);

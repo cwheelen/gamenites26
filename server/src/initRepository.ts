@@ -4,14 +4,17 @@ import {
   AuthRepo,
   ChatRepo,
   CommentRepo,
+  FriendRequestRepo,
+  FriendshipRepo,
   GameRepo,
   MessageRepo,
   ThreadRepo,
   UserRepo,
 } from "./repository.ts";
-import type { GameRecord, ThreadRecord } from "./models.ts";
+import type { GameRecord, ThreadRecord, FriendshipRecord } from "./models.ts";
 import { createChat } from "./services/chat.service.ts";
 import { createUser, updateUser } from "./services/user.service.ts";
+import { createFriendRequest } from "./services/friendRequest.service.ts";
 
 /** Reset stored games with example data. */
 async function resetStoredGames() {
@@ -117,6 +120,28 @@ async function resetStoredUsers() {
   await updateUser("user3", { display: "Frau Drei" });
 }
 
+async function resetFriends() {
+  await FriendshipRepo.clear();
+  await FriendRequestRepo.clear();
+
+  const user0id = (await getUserByUsername("user0"))!.userId;
+  const user1id = (await getUserByUsername("user1"))!.userId;
+  const user2id = (await getUserByUsername("user2"))!.userId;
+  const user3id = (await getUserByUsername("user3"))!.userId;
+
+  const storedFriends: { [key: string]: FriendshipRecord } = {
+    deadbeefdeadbeefdeadbeef: {
+      users: [user0id, user1id],
+      createdAt: new Date().toISOString(),
+    },
+  };
+
+  await Promise.all(
+    Object.entries(storedFriends).map(([id, entry]) => FriendshipRepo.set(id, entry)),
+  );
+  await createFriendRequest(user2id, user3id, new Date());
+}
+
 export async function resetEverythingToDefaults() {
   await AuthRepo.clear();
   await ChatRepo.clear();
@@ -125,8 +150,11 @@ export async function resetEverythingToDefaults() {
   await MessageRepo.clear();
   await ThreadRepo.clear();
   await UserRepo.clear();
+  await FriendshipRepo.clear();
+  await FriendRequestRepo.clear();
 
   await resetStoredUsers();
   await resetStoredThreads();
   await resetStoredGames();
+  await resetFriends();
 }

@@ -1,4 +1,4 @@
-import { type CreateFriendRequest, type FriendRequestInfo } from "@gamenite/shared";
+import { type FriendRequestInfo } from "@gamenite/shared";
 import { FriendRequestRepo } from "../repository.ts";
 import { populateSafeUserInfo } from "./user.service.ts";
 import type { UserWithId } from "../types.ts";
@@ -16,13 +16,13 @@ async function populateFriendRequestInfo(friendRequestId: string): Promise<Frien
 }
 
 export async function createFriendRequest(
-  from: string,
-  { to }: CreateFriendRequest,
+  fromId: string,
+  toId: string,
   createdAt: Date,
 ): Promise<FriendRequestInfo> {
   const id = await FriendRequestRepo.add({
-    from,
-    to,
+    from: fromId,
+    to: toId,
     createdAt: createdAt.toISOString(),
     status: "pending",
   });

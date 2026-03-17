@@ -23,8 +23,9 @@ export async function createFriend(
   if (!user) throw new Error(`No user for id ${userId}`);
   const friend = await populateSafeUserInfo(friendId);
   if (!friend) throw new Error(`No user for id ${friendId}`);
+  const sortedList = [userId, friendId].sort();
   const id = await FriendshipRepo.add({
-    users: [userId, friendId],
+    users: [sortedList[0], sortedList[1]],
     createdAt: createdAt.toISOString(),
   });
   return populateFriendInfo(id);
