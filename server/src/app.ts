@@ -5,11 +5,14 @@ import { Server } from "socket.io";
 import { z } from "zod";
 import * as http from "node:http";
 import * as chat from "./controllers/chat.controller.ts";
+import * as block from "./controllers/block.controller.ts";
+import * as dm from "./controllers/dm.controller.ts";
 import * as game from "./controllers/game.controller.ts";
 import * as leaderboard from "./controllers/leaderboard.controller.ts";
 import * as user from "./controllers/user.controller.ts";
 import * as thread from "./controllers/thread.controller.ts";
 import * as friend from "./controllers/friends.controller.ts";
+import * as myFriend from "./controllers/friend.controller.ts";
 import { type GameServer } from "./types.ts";
 
 export const app = express();
@@ -69,6 +72,22 @@ app.use(
         .get("/list/:username", friend.getRequestList)
         .get("/:id", friend.getFriendRequest)
         .put("update", friend.putUpdateFriendRequest),
+    )
+    .use(
+      "/myFriend",
+      Router()
+        .post("/request", myFriend.postRequest)
+        .post("/accept", myFriend.postAccept)
+        .get("/list/:username", myFriend.getList)
+        .get("/status/:usernameA/:usernameB", myFriend.getStatus),
+    )
+    .use("/dm", Router().post("/open", dm.postOpen))
+    .use(
+      "/block",
+      Router()
+        .post("/block", block.postBlock)
+        .post("/unblock", block.postUnblock)
+        .get("/status/:viewerUsername/:targetUsername", block.getStatus),
     ),
 );
 

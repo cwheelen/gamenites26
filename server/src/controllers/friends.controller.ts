@@ -4,7 +4,6 @@ import {
   zCreateFriendRequest,
   zUpdateFriendRequest,
   type FriendInfo,
-  type FriendRequestInfo,
 } from "@gamenite/shared";
 import {
   getFriendRequestById,
@@ -22,7 +21,7 @@ import {
 } from "../services/friends.service.ts";
 import { populateSafeUserInfo } from "../services/user.service.ts";
 
-export const postCreateFriendRequest: RestAPI<FriendRequestInfo> = async (req, res) => {
+export const postCreateFriendRequest: RestAPI<unknown> = async (req, res) => {
   const body = withAuth(zCreateFriendRequest).safeParse(req.body);
   if (!body.success) {
     res.status(400).send({ error: "Poorly-formed request" });
@@ -43,7 +42,7 @@ export const postCreateFriendRequest: RestAPI<FriendRequestInfo> = async (req, r
   res.send(await createFriendRequest(user.userId, recipeint.userId, new Date()));
 };
 
-export const getFriendRequest: RestAPI<FriendRequestInfo> = async (req, res) => {
+export const getFriendRequest: RestAPI<unknown> = async (req, res) => {
   const friendRequest = await getFriendRequestById(req.params.id);
 
   if (!friendRequest) {
@@ -53,11 +52,11 @@ export const getFriendRequest: RestAPI<FriendRequestInfo> = async (req, res) => 
   res.send(friendRequest);
 };
 
-export const getRequestList: RestAPI<FriendRequestInfo[]> = async (req, res) => {
+export const getRequestList: RestAPI<unknown> = async (req, res) => {
   res.send(await getFriendRequestsByUsername(req.params.username));
 };
 
-export const putUpdateFriendRequest: RestAPI<FriendRequestInfo> = async (req, res) => {
+export const putUpdateFriendRequest: RestAPI<unknown> = async (req, res) => {
   const body = withAuth(zUpdateFriendRequest).safeParse(req.body);
   if (!body.success) {
     res.status(400).send({ error: "Poorly-formed request" });

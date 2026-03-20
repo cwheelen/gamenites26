@@ -1,19 +1,38 @@
-import type { SafeUserInfo } from "@gamenite/shared";
+/* eslint-disable prettier/prettier */
+import type { SafeUserInfo, FriendRequestInfo } from "@gamenite/shared";
 import { useEffect, useState } from "react";
 import useTimeSince from "../hooks/useTimeSince";
 import { getUserById } from "../services/userService";
+import useAuth from "../hooks/useAuth.ts";
+import { useNavigate } from "react-router-dom";
+import { sendFriendRequest, getFriendshipStatus } from "../services/friendService.ts";
+import { blockUser, unblockUser, getBlockStatus } from "../services/blockService.ts";
 
 interface ViewProfileProps {
   username: string;
 }
+
 export default function ViewProfile({ username }: ViewProfileProps) {
   const [componentState, setComponentState] = useState<
     { type: "waiting" } | { type: "error"; msg: string } | { type: "profile"; user: SafeUserInfo }
   >({ type: "waiting" });
   const timeSince = useTimeSince();
+  const auth = useAuth();
+  const navigate = useNavigate();
+
+  const [friendship, setFriendship] = useState<FriendRequestInfo | null>(null);
+  const [blockStatus, setBlockStatus] = useState<{
+    blockedByMe: boolean;
+    blockedByThem: boolean;
+  }>({ blockedByMe: false, blockedByThem: false });
+  const [err, setErr] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const [blocking, setBlocking] = useState(false);
 
   useEffect(() => {
     let cancel = false;
+    setFriendship(null);
+    setBlockStatus({ blockedByMe: false, blockedByThem: false });
 
     getUserById(username)
       .then((response) => {
@@ -29,10 +48,91 @@ export default function ViewProfile({ username }: ViewProfileProps) {
         setComponentState({ type: "error", msg: `${err}` });
       });
 
+    getFriendshipStatus(auth.username, username).then((result) => {
+      if (cancel) return;
+      if (!result || "error" in result) setFriendship(null);
+      else setFriendship(result);
+    });
+
+    getBlockStatus(auth.username, username).then((result) => {
+      if (cancel) return;
+      if (!result || "error" in result) return;
+      setBlockStatus(result);
+    });
+
     return () => {
       cancel = true;
     };
-  }, [username]);
+  }, [username, auth.username]);
+
+  const handleSendRequest = async () => {
+    setSending(true);
+    setErr(null);
+    const result = await sendFriendRequest(auth, username);
+    setSending(false);
+    if ("error" in result) {
+      setErr(result.error);
+    } else {
+      setFriendship(result);
+    }
+  };
+
+  const handleBlock = async () => {
+    setBlocking(true);
+    setErr(null);
+    const result = await blockUser(auth, username);
+    setBlocking(false);
+    if ("error" in result) {
+      setErr(result.error);
+    } else {
+      setBlockStatus({ blockedByMe: true, blockedByThem: blockStatus.blockedByThem });
+    }
+  };
+
+  const handleUnblock = async () => {
+    setBlocking(true);
+    setErr(null);
+    const result = await unblockUser(auth, username);
+    setBlocking(false);
+    if ("error" in result) {
+      setErr(result.error);
+    } else {
+      setBlockStatus({ blockedByMe: false, blockedByThem: blockStatus.blockedByThem });
+    }
+  };
+
+  const friendButton = () => {
+    if (blockStatus.blockedByMe || blockStatus.blockedByThem) return null;
+    if (!friendship) {
+      return (
+        <button className="primary narrow" onClick={handleSendRequest} disabled={sending}>
+          {sending ? "Sending..." : "Add Friend"}
+        </button>
+      );
+    }
+    if (friendship.status === "pending") {
+      if (friendship.from.username === auth.username) {
+        return (
+          <button className="secondary narrow" disabled>
+            Request sent
+          </button>
+        );
+      }
+      return (
+        <button className="secondary narrow" disabled>
+          Request received
+        </button>
+      );
+    }
+    if (friendship.status === "accepted") {
+      return (
+        <button className="secondary narrow" disabled>
+          Friends ✓
+        </button>
+      );
+    }
+    return null;
+  };
 
   switch (componentState.type) {
     case "error":
@@ -42,7 +142,28 @@ export default function ViewProfile({ username }: ViewProfileProps) {
     case "profile":
       return (
         <>
-          <h2>Profile for {componentState.user.display}</h2>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            <h2>Profile for {componentState.user.display}</h2>
+            {friendButton()}
+            {!blockStatus.blockedByMe && !blockStatus.blockedByThem && (
+              <button className="primary narrow" onClick={() => navigate(`/dm/${username}`)}>
+                Message
+              </button>
+            )}
+            {blockStatus.blockedByMe ? (
+              <button className="secondary narrow" onClick={handleUnblock} disabled={blocking}>
+                {blocking ? "Unblocking..." : "Unblock"}
+              </button>
+            ) : (
+              <button className="secondary narrow" onClick={handleBlock} disabled={blocking}>
+                {blocking ? "Blocking..." : "Block"}
+              </button>
+            )}
+          </div>
+          {blockStatus.blockedByThem && (
+            <p className="smallAndGray">This user has restricted who can contact them.</p>
+          )}
+          {err && <p className="error-message">{err}</p>}
           <div>
             <ul>
               <li>Username: {componentState.user.username}</li>
