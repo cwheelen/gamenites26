@@ -58,17 +58,17 @@ describe("GET /api/friend/:id", () => {
   });
 
   it("should return existing friend based on id", async () => {
-    const response = await supertest(app).get(`/api/friend/deadbeefdeadbeefdeadbeef}`);
+    const response = await supertest(app).get(`/api/friend/deadbeefdeadbeefdeadbeef`);
     expect(response.body).toStrictEqual({
       friendId: "deadbeefdeadbeefdeadbeef",
       users: [
         {
-          username: "user1",
+          username: "user0",
           display: expect.any(String),
           createdAt: expect.anything(),
         },
         {
-          username: "user2",
+          username: "user1",
           display: expect.any(String),
           createdAt: expect.anything(),
         },
