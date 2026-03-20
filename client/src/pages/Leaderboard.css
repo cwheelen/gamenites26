@@ -1,0 +1,26 @@
+.leaderboardTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.leaderboardTable th,
+.leaderboardTable td {
+  padding: 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.leaderboardTable th {
+  background-color: var(--color-background-secondary);
+  font-weight: bold;
+}
+
+.leaderboardTable tr:hover {
+  background-color: var(--color-background-hover);
+}
+
+.leaderboardTable td:nth-child(1) {
+  font-weight: bold;
+  color: var(--color-accent);
+}

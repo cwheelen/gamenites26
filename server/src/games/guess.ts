@@ -53,6 +53,20 @@ export const guessLogic: GameLogic<GuessState, GuessView> = {
     }
     return ` made a guess`;
   },
+  getWinners: ({ secret, guesses }) => {
+    if (!allGuessed(guesses)) return [];
+
+    // Find the minimum distance to the secret
+    const distances = guesses.map((guess, index) => ({
+      index,
+      distance: Math.abs(guess - secret),
+    }));
+
+    const minDistance = Math.min(...distances.map((d) => d.distance));
+
+    // Return all players with the minimum distance (can be multiple winners)
+    return distances.filter((d) => d.distance === minDistance).map((d) => d.index);
+  },
 };
 
 export const guessGameService = new GameService<GuessState, GuessView>(guessLogic);

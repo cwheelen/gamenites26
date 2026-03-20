@@ -45,6 +45,20 @@ export const zGameMakeMovePayload = z.object({
   move: z.unknown(),
 });
 
+/**
+ * Represents leaderboard information for a user
+ */
+export interface LeaderboardEntry {
+  user: SafeUserInfo;
+  gameType: GameKey;
+  wins: number;
+  losses: number;
+  gamesPlayed: number;
+  currentStreak: number;
+  longestStreak: number;
+  lastUpdated: string; // ISO date string
+}
+
 /*** INDIVIDUAL GAME TYPES ***/
 import type { NimView } from "./games/nim.types.ts";
 export * from "./games/nim.types.ts";

@@ -16,6 +16,7 @@ import { type TaggedGameView } from "@gamenite/shared";
  *  - `tagView`: adds the correct game key to the game view
  *  - `describeMove`: generates the suffix of a human-readable move
  *    description. The display name is always prepended by the caller.
+ *  - `getWinners`: returns the indices of winning players when the game is done
  */
 export interface GameLogic<GameState, GameView> {
   minPlayers: number;
@@ -31,4 +32,5 @@ export interface GameLogic<GameState, GameView> {
     movePayload: unknown,
     playerIndex: number,
   ) => string;
+  getWinners: (state: GameState) => number[];
 }
