@@ -4,11 +4,35 @@ import type { LeaderboardEntry, GameKey, ErrorMsg } from "@gamenite/shared";
 /**
  * Get leaderboard for a specific game type
  * @param gameType - The type of game
- * @returns Promise resolving to leaderboard entries or error message
+ * @param page - The page number (1-based, default 1)
+ * @param limit - The number of entries per page (default 10)
+ * @returns Promise resolving to leaderboard data with pagination info or error message
  */
-export async function getLeaderboard(gameType: GameKey): Promise<LeaderboardEntry[] | ErrorMsg> {
+export async function getLeaderboard(
+  gameType: GameKey,
+  page: number = 1,
+  limit: number = 10,
+): Promise<
+  | {
+      entries: LeaderboardEntry[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    }
+  | ErrorMsg
+> {
   try {
-    const response = await api.get<LeaderboardEntry[] | ErrorMsg>(`/api/leaderboard/${gameType}`);
+    const response = await api.get<
+      | {
+          entries: LeaderboardEntry[];
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+        }
+      | ErrorMsg
+    >(`/api/leaderboard/${gameType}?page=${page}&limit=${limit}`);
     return response.data;
   } catch (error) {
     return exceptionToErrorMsg(error);

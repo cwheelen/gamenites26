@@ -12,10 +12,15 @@ describe("GET /api/leaderboard/:gameType", () => {
   it("should return leaderboard for nim", async () => {
     const response = await supertest(app).get("/api/leaderboard/nim");
     expect(response.status).toBe(200);
-    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body).toHaveProperty("entries");
+    expect(Array.isArray(response.body.entries)).toBe(true);
+    expect(response.body).toHaveProperty("page", 1);
+    expect(response.body).toHaveProperty("limit", 10);
+    expect(response.body).toHaveProperty("total");
+    expect(response.body).toHaveProperty("totalPages");
     // Check structure of first entry if exists
-    if (response.body.length > 0) {
-      const entry = response.body[0];
+    if (response.body.entries.length > 0) {
+      const entry = response.body.entries[0];
       expect(entry).toHaveProperty("user");
       expect(entry).toHaveProperty("gameType", "nim");
       expect(entry).toHaveProperty("wins");
@@ -30,7 +35,12 @@ describe("GET /api/leaderboard/:gameType", () => {
   it("should return leaderboard for guess", async () => {
     const response = await supertest(app).get("/api/leaderboard/guess");
     expect(response.status).toBe(200);
-    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body).toHaveProperty("entries");
+    expect(Array.isArray(response.body.entries)).toBe(true);
+    expect(response.body).toHaveProperty("page", 1);
+    expect(response.body).toHaveProperty("limit", 10);
+    expect(response.body).toHaveProperty("total");
+    expect(response.body).toHaveProperty("totalPages");
   });
 });
 

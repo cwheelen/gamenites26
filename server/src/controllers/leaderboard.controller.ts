@@ -8,19 +8,28 @@ import { getUserByUsername } from "../services/auth.service.ts";
  * @param req The request with game type as a parameter
  * @param res The response containing leaderboard entries
  */
-export const getByGameType: RestAPI<LeaderboardEntry[], { gameType: GameKey }> = async (
-  req,
-  res,
-) => {
+export const getByGameType: RestAPI<
+  {
+    entries: LeaderboardEntry[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  },
+  { gameType: GameKey }
+> = async (req, res) => {
   const gameType = req.params.gameType;
   if (!["nim", "guess"].includes(gameType)) {
     res.status(400).send({ error: "Invalid game type" });
     return;
   }
 
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+
   try {
-    const leaderboard = await getLeaderboard(gameType);
-    res.send(leaderboard);
+    const result = await getLeaderboard(gameType, page, limit);
+    res.send(result);
   } catch (error) {
     res.status(500).send({ error: "Failed to retrieve leaderboard" });
   }
