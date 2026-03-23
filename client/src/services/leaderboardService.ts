@@ -27,7 +27,7 @@ export async function getUserLeaderboard(
 ): Promise<LeaderboardEntry | null | ErrorMsg> {
   try {
     const response = await api.get<LeaderboardEntry | null | ErrorMsg>(
-      `/leaderboard/user/${username}/${gameType}`,
+      `/api/leaderboard/user/${username}/${gameType}`,
     );
     return response.data;
   } catch (error) {
