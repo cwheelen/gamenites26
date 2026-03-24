@@ -1,4 +1,4 @@
-import { type LegacyFriendRequestInfo } from "@gamenite/shared";
+import { type backendFriendRequestInfo } from "@gamenite/shared";
 import { FriendRequestRepo } from "../repository.ts";
 import { populateSafeUserInfo } from "./user.service.ts";
 import type { UserWithId } from "../types.ts";
@@ -6,7 +6,7 @@ import { createFriend } from "./friends.service.ts";
 
 async function populateFriendRequestInfo(
   friendRequestId: string,
-): Promise<LegacyFriendRequestInfo> {
+): Promise<backendFriendRequestInfo> {
   const friendRequest = await FriendRequestRepo.get(friendRequestId);
   return {
     friendRequestId,
@@ -21,7 +21,7 @@ export async function createFriendRequest(
   fromId: string,
   toId: string,
   createdAt: Date,
-): Promise<LegacyFriendRequestInfo> {
+): Promise<backendFriendRequestInfo> {
   const id = await FriendRequestRepo.add({
     from: fromId,
     to: toId,
@@ -33,7 +33,7 @@ export async function createFriendRequest(
 
 export async function getFriendRequestById(
   friendRequestId: string,
-): Promise<LegacyFriendRequestInfo | null> {
+): Promise<backendFriendRequestInfo | null> {
   const friendRequest = await FriendRequestRepo.find(friendRequestId);
   if (!friendRequest) return null;
   return populateFriendRequestInfo(friendRequestId);
@@ -41,7 +41,7 @@ export async function getFriendRequestById(
 
 export async function getFriendRequestsByUsername(
   username: string,
-): Promise<LegacyFriendRequestInfo[]> {
+): Promise<backendFriendRequestInfo[]> {
   const keys = await FriendRequestRepo.getAllKeys();
   const unfiltered = await Promise.all(keys.map(populateFriendRequestInfo));
   const unsorted = unfiltered.filter((friendRequest) => {
@@ -58,7 +58,7 @@ export async function updateFriendRequest(
   friendRequestId: string,
   user: UserWithId,
   status: "accepted" | "rejected",
-): Promise<LegacyFriendRequestInfo> {
+): Promise<backendFriendRequestInfo> {
   const friendRequest = await FriendRequestRepo.find(friendRequestId);
   if (!friendRequest) throw new Error(`user ${user.username} updated an invalid friend request id`);
   if (friendRequest.status !== "pending") {

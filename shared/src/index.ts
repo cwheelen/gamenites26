@@ -22,7 +22,7 @@ export * from "./user.types.ts";
 // this export had to be a little different because of the API
 export {
   type FriendInfo,
-  type FriendRequestInfo as LegacyFriendRequestInfo,
+  type FriendRequestInfo as backendFriendRequestInfo,
   type CreateFriendRequest,
   zCreateFriendRequest,
   type UpdateFriendRequest,
