@@ -1,4 +1,4 @@
-import { type JSX, useMemo } from "react";
+import { type JSX, useEffect, useMemo } from "react";
 import { type AuthContext, LoginContext } from "../contexts/LoginContext.ts";
 import { type GameSocket } from "../util/types.ts";
 import { Navigate } from "react-router-dom";
@@ -25,6 +25,22 @@ export default function LoggedInRoute({ auth, socket, children }: LoggedInRouteP
   // (notably in `useAuth`). If we don't use `useMemo` here, those dependency
   // arrays will change every time the app updates.
   const context = useMemo(() => (auth && socket ? { ...auth, socket } : null), [auth, socket]);
+
+  useEffect(() => {
+    if (!auth || !socket) return;
+    const emitPresence = () => {
+      socket.emit("userPresenceConnect", {
+        auth: { username: auth.user.username, password: auth.pass },
+        payload: undefined,
+      });
+    };
+    emitPresence();
+    socket.on("connect", emitPresence);
+    return () => {
+      socket.off("connect", emitPresence);
+    };
+  }, [auth, socket]);
+
   return context ? (
     <LoginContext.Provider value={context}>{children}</LoginContext.Provider>
   ) : (

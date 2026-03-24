@@ -133,6 +133,7 @@ export interface UserRecord {
   username: string; // References Auth records
   display: string;
   createdAt: DateISO;
+  lastOnline: DateISO;
 }
 
 /**

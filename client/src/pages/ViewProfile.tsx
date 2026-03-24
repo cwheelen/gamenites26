@@ -2,6 +2,8 @@ import type { SafeUserInfo } from "@gamenite/shared";
 import { useEffect, useState } from "react";
 import useTimeSince from "../hooks/useTimeSince";
 import { getUserById } from "../services/userService";
+import useSocketsForPresence from "../hooks/useSocketsForPresence";
+import OnlineIndicator from "../components/OnlineIndicator";
 
 interface ViewProfileProps {
   username: string;
@@ -11,6 +13,7 @@ export default function ViewProfile({ username }: ViewProfileProps) {
     { type: "waiting" } | { type: "error"; msg: string } | { type: "profile"; user: SafeUserInfo }
   >({ type: "waiting" });
   const timeSince = useTimeSince();
+  const { status: presenceStatus } = useSocketsForPresence(username);
 
   useEffect(() => {
     let cancel = false;
@@ -21,7 +24,10 @@ export default function ViewProfile({ username }: ViewProfileProps) {
         if ("error" in response) {
           setComponentState({ type: "error", msg: response.error });
         } else {
-          setComponentState({ type: "profile", user: response });
+          setComponentState({
+            type: "profile",
+            user: response,
+          });
         }
       })
       .catch((err) => {
@@ -42,11 +48,25 @@ export default function ViewProfile({ username }: ViewProfileProps) {
     case "profile":
       return (
         <>
-          <h2>Profile for {componentState.user.display}</h2>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <h2>Profile for {componentState.user.display} </h2>
+            <OnlineIndicator status={presenceStatus} />
+          </div>
+
           <div>
             <ul>
               <li>Username: {componentState.user.username}</li>
               <li>Account created {timeSince(componentState.user.createdAt)}</li>
+              {presenceStatus === "online" ? (
+                <li>Last online: Currently online</li>
+              ) : (
+                <li>
+                  Last online:{" "}
+                  {componentState.user.lastOnline
+                    ? timeSince(componentState.user.lastOnline)
+                    : "N/A"}
+                </li>
+              )}
             </ul>
           </div>
         </>

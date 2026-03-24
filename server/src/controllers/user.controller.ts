@@ -1,13 +1,16 @@
 import { type SafeUserInfo, withAuth, zUserAuth, zUserUpdateRequest } from "@gamenite/shared";
 import {
   createUser,
+  getStatus,
   getUsersByUsername,
   populateSafeUserInfo,
   updateUser,
 } from "../services/user.service.ts";
-import { type RestAPI } from "../types.ts";
+import { type RestAPI, type SocketAPI } from "../types.ts";
 import { z } from "zod";
-import { checkAuth, getUserByUsername } from "../services/auth.service.ts";
+import { checkAuth, enforceAuth, getUserByUsername } from "../services/auth.service.ts";
+import { register } from "../services/presence.service.ts";
+import { logSocketError } from "./socket.controller.ts";
 
 /**
  * Handles user login by validating credentials.
@@ -82,6 +85,20 @@ export const getByUsername: RestAPI<SafeUserInfo, { username: string }> = async 
 };
 
 /**
+ * Returns a user's current online/offline state.
+ */
+export const getStatusByUsername: RestAPI<
+  { status: "online" | "offline"; lastOnline: Date },
+  { username: string }
+> = async (req, res) => {
+  try {
+    res.send(await getStatus(req.params.username));
+  } catch {
+    res.status(404).send({ error: "User not found" });
+  }
+};
+
+/**
  * Returns the user information for a list of users
  */
 export const postList: RestAPI<SafeUserInfo[]> = async (req, res) => {
@@ -100,4 +117,26 @@ export const postList: RestAPI<SafeUserInfo[]> = async (req, res) => {
   }
 
   res.send(users);
+};
+
+/**
+ * Handle a socket request to join the presence: send the connection
+ * to the presence and set the status of the user to 'online'
+ */
+export const socketPresenceConnect: SocketAPI = (socket, io) => async (body) => {
+  try {
+    const { auth } = withAuth(z.undefined()).parse(body);
+    const user = await enforceAuth(auth);
+    const becameOnline = await register(user.userId, socket.id);
+    await socket.join("presence");
+
+    if (becameOnline) {
+      io.to("presence").emit("userStatusChanged", {
+        user: await populateSafeUserInfo(user.userId),
+        status: "online",
+      });
+    }
+  } catch (err) {
+    logSocketError(socket, err);
+  }
 };
