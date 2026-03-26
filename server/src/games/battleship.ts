@@ -13,7 +13,7 @@ import { type GameLogic } from "./gameLogic.ts";
 import { GameService } from "./gameServiceManager.ts";
 import { coinFlip } from "./util.ts";
 
-// Board helpers 
+// Board helpers
 
 /** Creates a fresh 10x10 grid filled with a value */
 function makeGrid<T>(fill: T): T[][] {
@@ -232,7 +232,7 @@ export const battleshipLogic: GameLogic<BattleshipState, BattleshipView> = {
       return {
         ...state,
         phase: gameOver ? "done" : "shooting",
-        nextPlayer: gameOver ? state.nextPlayer : (1 - playerIndex as 0 | 1),
+        nextPlayer: gameOver ? state.nextPlayer : ((1 - playerIndex) as 0 | 1),
         boards: newBoards,
       };
     }
@@ -309,8 +309,7 @@ export const battleshipLogic: GameLogic<BattleshipState, BattleshipView> = {
 
     const sunkShip = opponentBoard.ships.find(
       (ship) =>
-        isShipSunk({ ...ship }, newShotsReceived) &&
-        !isShipSunk(ship, opponentBoard.shotsReceived),
+        isShipSunk({ ...ship }, newShotsReceived) && !isShipSunk(ship, opponentBoard.shotsReceived),
     );
 
     const colLetter = String.fromCharCode(65 + col); // A-J

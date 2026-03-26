@@ -88,4 +88,3 @@ export type TaggedGameView =
   | { type: "nim"; view: NimView }
   | { type: "guess"; view: GuessView }
   | { type: "battleship"; view: BattleshipView };
- 

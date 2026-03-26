@@ -33,7 +33,7 @@ export type OpponentBoardCell =
   | "miss" // shot and missed
   | "sunk"; // part of a fully-sunk ship
 
-// Ship placement 
+// Ship placement
 
 /**
  * A placed ship on the board
