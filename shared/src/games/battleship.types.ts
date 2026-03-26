@@ -1,3 +1,25 @@
+/** Returns all [row, col] cells occupied by a ship */
+export function shipCells(ship: PlacedShip): [number, number][] {
+  return Array.from({ length: ship.size }, (_, i) =>
+    ship.horizontal
+      ? ([ship.row, ship.col + i] as [number, number])
+      : ([ship.row + i, ship.col] as [number, number]),
+  );
+}
+
+/** Returns true if the ship fits within the board boundaries */
+export function shipInBounds(ship: PlacedShip): boolean {
+  if (ship.horizontal) {
+    return ship.row < BOARD_SIZE && ship.col + ship.size <= BOARD_SIZE;
+  }
+  return ship.col < BOARD_SIZE && ship.row + ship.size <= BOARD_SIZE;
+}
+
+/** Returns true if two ships overlap */
+export function shipsOverlap(a: PlacedShip, b: PlacedShip): boolean {
+  const cellsA = new Set(shipCells(a).map(([r, c]) => `${r},${c}`));
+  return shipCells(b).some(([r, c]) => cellsA.has(`${r},${c}`));
+}
 import { z } from "zod";
 
 // Constants

@@ -8,39 +8,18 @@ import {
   type PlacedShip,
   type PlayerBoardState,
   zBattleshipMove,
+  shipCells,
+  shipInBounds,
+  shipsOverlap,
 } from "@gamenite/shared";
 import { type GameLogic } from "./gameLogic.ts";
 import { GameService } from "./gameServiceManager.ts";
 import { coinFlip } from "./util.ts";
 
 // Board helpers
-
 /** Creates a fresh 10x10 grid filled with a value */
 function makeGrid<T>(fill: T): T[][] {
   return Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(fill) as T[]);
-}
-
-/** Returns all [row, col] cells occupied by a ship */
-function shipCells(ship: PlacedShip): [number, number][] {
-  return Array.from({ length: ship.size }, (_, i) =>
-    ship.horizontal
-      ? ([ship.row, ship.col + i] as [number, number])
-      : ([ship.row + i, ship.col] as [number, number]),
-  );
-}
-
-/** Returns true if the ship fits within the board boundaries */
-function shipInBounds(ship: PlacedShip): boolean {
-  if (ship.horizontal) {
-    return ship.row < BOARD_SIZE && ship.col + ship.size <= BOARD_SIZE;
-  }
-  return ship.col < BOARD_SIZE && ship.row + ship.size <= BOARD_SIZE;
-}
-
-/** Returns true if two ships overlap */
-function shipsOverlap(a: PlacedShip, b: PlacedShip): boolean {
-  const cellsA = new Set(shipCells(a).map(([r, c]) => `${r},${c}`));
-  return shipCells(b).some(([r, c]) => cellsA.has(`${r},${c}`));
 }
 
 /**
@@ -289,7 +268,7 @@ export const battleshipLogic: GameLogic<BattleshipState, BattleshipView> = {
     if (move.error) return " made a move";
 
     if (move.data.type === "place") {
-      return " placed their ships";
+      return " finished placing ships";
     }
 
     // Shoot move — describe the result
