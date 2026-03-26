@@ -11,6 +11,7 @@ const ROWS = 6;
 const COLS = 7;
 
 function emptyBoard(): (Connect4Token | null)[][] {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   return Array.from({ length: ROWS }, () => Array(COLS).fill(null));
 }
 
@@ -111,3 +112,20 @@ export const connect4Logic: GameLogic<Connect4State, Connect4View> = {
 };
 
 export const connect4GameService = new GameService<Connect4State, Connect4View>(connect4Logic);
+
+// This is bot code
+
+/** Sentinel user ID stored in game.players to represent the CPU opponent */
+export const BOT_USER_ID = "__bot__";
+
+/**
+ * Picks a random non-full column for the bot to play.
+ * Only call this when the game is not yet over.
+ */
+export function getBotMove(board: (Connect4Token | null)[][]): number {
+  const available: number[] = [];
+  for (let col = 0; col < COLS; col++) {
+    if (board[0][col] === null) available.push(col);
+  }
+  return available[Math.floor(Math.random() * available.length)];
+}

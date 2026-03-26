@@ -4,10 +4,11 @@ import { populateSafeUserInfo } from "./user.service.ts";
 import { type GameServicer } from "../games/gameServiceManager.ts";
 import { nimGameService } from "../games/nim.ts";
 import { guessGameService } from "../games/guess.ts";
-import { connect4GameService } from "../games/connect4.ts";
+import { connect4GameService, getBotMove, BOT_USER_ID } from "../games/connect4.ts";
 import { type GameViewUpdates, type UserWithId } from "../types.ts";
 import { GameRepo } from "../repository.ts";
 import { updateLeaderboard } from "./leaderboard.service.ts";
+import type { Connect4State } from "@gamenite/shared";
 
 /**
  * The service interface for individual games
@@ -19,10 +20,8 @@ export const gameServices: { [key in GameKey]: GameServicer } = {
 };
 
 /**
- * Expand a stored game
- *
- * @param gameId - Valid game id
- * @returns the expanded game info object
+ * Expand a stored game.
+ * The bot sentinel ID is excluded from the players list sent to clients.
  */
 async function populateGameInfo(gameId: string): Promise<GameInfo> {
   const game = await GameRepo.get(gameId);
@@ -31,7 +30,10 @@ async function populateGameInfo(gameId: string): Promise<GameInfo> {
     createdBy: await populateSafeUserInfo(game.createdBy),
     chat: game.chat,
     createdAt: new Date(game.createdAt),
-    players: await Promise.all(game.players.map(populateSafeUserInfo)),
+    // ← filter out the bot before populating — it has no User record
+    players: await Promise.all(
+      game.players.filter((id) => id !== BOT_USER_ID).map(populateSafeUserInfo),
+    ),
     type: game.type,
     status: !game.state ? "waiting" : game.done ? "done" : "active",
     minPlayers: gameServices[game.type].minPlayers,
@@ -39,35 +41,47 @@ async function populateGameInfo(gameId: string): Promise<GameInfo> {
 }
 
 /**
- * Create and store a new game
+ * Create and store a new game.
  *
  * @param user - Initial player in the game's waiting room
  * @param type - Game key
  * @param createdAt - Creation time for this game
+ * @param vsBot - If true (Connect 4 only), add the CPU as player 1 and start immediately
  * @returns the new game's info object
  */
 export async function createGame(
   user: UserWithId,
   type: GameKey,
   createdAt: Date,
+  vsBot = false, // ← new parameter
 ): Promise<GameInfo> {
   const chat = await createChat(createdAt);
+
+  // For bot games the players array is [human, bot] from the start
+  const players = vsBot && type === "connect4" ? [user.userId, BOT_USER_ID] : [user.userId];
+
   const gameId = await GameRepo.add({
     type,
     done: false,
     chat: chat.chatId,
     createdAt: createdAt.toISOString(),
     createdBy: user.userId,
-    players: [user.userId],
+    players,
   });
+
+  // Bot games skip the waiting room — initialise state immediately
+  if (vsBot && type === "connect4") {
+    const game = await GameRepo.get(gameId);
+    const { state } = gameServices[type].create(players);
+    game.state = state;
+    await GameRepo.set(gameId, game);
+  }
+
   return populateGameInfo(gameId);
 }
 
 /**
- * Retrieves a single game from the database. If you expect the id to be valid, use `forceGameById`.
- *
- * @param gameId - Ostensible game id
- * @returns the game's info object, or null
+ * Retrieves a single game from the database.
  */
 export async function getGameById(gameId: string): Promise<GameInfo | null> {
   const game = await GameRepo.find(gameId);
@@ -76,14 +90,7 @@ export async function getGameById(gameId: string): Promise<GameInfo | null> {
 }
 
 /**
- * Adds a user to a game that hasn't started yet. If the resulting game object has the maximum
- * allowed number of players, it is the responsibility of the caller to start the game.
- *
- * @param gameId - Ostensible game id
- * @param user - Authenticated user
- * @returns the game's info object, with the `user` listed among the players
- * @throws if the game id is not valid, if the game has started, or if the game cannot accept more
- * players
+ * Adds a user to a game that hasn't started yet.
  */
 export async function joinGame(gameId: string, user: UserWithId): Promise<GameInfo> {
   const game = await GameRepo.find(gameId);
@@ -105,13 +112,7 @@ export async function joinGame(gameId: string, user: UserWithId): Promise<GameIn
 }
 
 /**
- * Initializes a game that hasn't started yet
- *
- * @param gameId - Ostensible game id
- * @param user - Authenticated user
- * @returns the necessary views for everyone watching the game
- * @throws if the game id is not valid, if the game already started, or if the game lacks enough
- * players to start
+ * Initializes a game that hasn't started yet.
  */
 export async function startGame(gameId: string, user: UserWithId): Promise<GameViewUpdates> {
   const game = await GameRepo.find(gameId);
@@ -137,21 +138,14 @@ export async function startGame(gameId: string, user: UserWithId): Promise<GameV
 }
 
 /**
- * Get a list of all games
- *
- * @returns a list of game summaries, ordered reverse chronologically
+ * Get a list of all games.
  */
 export async function getGames(): Promise<GameInfo[]> {
   const keys = await GameRepo.getAllKeys();
   const unsorted = await Promise.all(keys.map(populateGameInfo));
-
   return unsorted.toSorted((game1, game2) => game2.createdAt.getTime() - game1.createdAt.getTime());
 }
 
-/**
- * Represents the result of a game update, including view updates and the
- * move description suffix (the display name is prepended by the caller).
- */
 export interface GameUpdateResult {
   views: GameViewUpdates;
   moveDescription: string;
@@ -159,13 +153,9 @@ export interface GameUpdateResult {
 }
 
 /**
- * Updates a game state and returns the necessary view updates
- *
- * @param gameId - Ostensible game id
- * @param user - Authenticated user
- * @param move - Unsanitized game move
- * @returns the view updates and move description to send to players and watchers
- * @throws if the game id or move is not valid
+ * Updates a game state and returns the necessary view updates.
+ * When it's a bot game and the human's move leaves it as the bot's turn,
+ * the bot move is computed and applied here before returning.
  */
 export async function updateGame(
   gameId: string,
@@ -190,13 +180,48 @@ export async function updateGame(
   game.done = game.done || result.done;
   await GameRepo.set(gameId, game);
 
-  // Update leaderboard if the game just finished
+  // Update leaderboard if the game just finished (skip the bot sentinel)
   if (!wasDone && game.done) {
     const winners = gameServices[game.type].getWinners(game.state);
     for (let i = 0; i < game.players.length; i++) {
       const playerUserId = game.players[i];
+      if (playerUserId === BOT_USER_ID) continue; // ← new: bot has no leaderboard entry
       const won = winners.includes(i);
       await updateLeaderboard(playerUserId, game.type, won);
+    }
+  }
+
+  // Bot code
+  if (
+    !game.done &&
+    game.type === "connect4" &&
+    game.players[(result.state as Connect4State).nextPlayer] === BOT_USER_ID
+  ) {
+    const botIndex = (result.state as Connect4State).nextPlayer;
+    const botCol = getBotMove((result.state as Connect4State).board);
+    const botResult = gameServices["connect4"].update(game.state, botCol, botIndex, game.players);
+
+    if (botResult) {
+      game.state = botResult.state;
+      game.done = game.done || botResult.done;
+      await GameRepo.set(gameId, game);
+
+      // Update leaderboard if the bot's move ended the game
+      if (!wasDone && game.done) {
+        const winners = gameServices[game.type].getWinners(game.state);
+        for (let i = 0; i < game.players.length; i++) {
+          const playerUserId = game.players[i];
+          if (playerUserId === BOT_USER_ID) continue;
+          await updateLeaderboard(playerUserId, game.type, winners.includes(i));
+        }
+      }
+
+      // Return the bot's views
+      return {
+        views: botResult.views,
+        moveDescription: result.moveDescription,
+        chatId: game.chat,
+      };
     }
   }
 
@@ -208,10 +233,7 @@ export async function updateGame(
 }
 
 /**
- * View a game as a specific user
- * @param gameId - Ostensible game id
- * @param user - Authenticated user
- * @returns A boolean for whether that user is a player, the player's view, and the list of players
+ * View a game as a specific user.
  */
 export async function viewGame(gameId: string, user: UserWithId) {
   const game = await GameRepo.find(gameId);
@@ -224,6 +246,8 @@ export async function viewGame(gameId: string, user: UserWithId) {
   return {
     isPlayer: playerIndex >= 0,
     view,
-    players: await Promise.all(game.players.map(populateSafeUserInfo)),
+    players: await Promise.all(
+      game.players.filter((id) => id !== BOT_USER_ID).map(populateSafeUserInfo),
+    ),
   };
 }

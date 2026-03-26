@@ -15,13 +15,36 @@ import { z } from "zod";
 import { logSocketError } from "./socket.controller.ts";
 import { checkAuth, enforceAuth } from "../services/auth.service.ts";
 
-/**
- * Handle POST requests to `/api/game/create` by creating a game. The game
- * starts with one player, the user who made the POST request.
- */
+const zCreateGamePayload = z.object({
+  gameKey: zGameKey,
+  vsBot: z.boolean().optional().default(false),
+});
+
 export const postCreate: RestAPI<GameInfo> = async (req, res) => {
-  const body = withAuth(zGameKey).safeParse(req.body);
+  const body = withAuth(z.unknown()).safeParse(req.body);
   if (body.error) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const rawPayload = body.data.payload;
+  let gameKeyStr: string;
+  let vsBot = false;
+
+  if (typeof rawPayload === "string") {
+    gameKeyStr = rawPayload;
+  } else {
+    const parsed = zCreateGamePayload.safeParse(rawPayload);
+    if (parsed.error) {
+      res.status(400).send({ error: "Poorly-formed request" });
+      return;
+    }
+    gameKeyStr = parsed.data.gameKey;
+    vsBot = parsed.data.vsBot;
+  }
+
+  const gameKeyParsed = zGameKey.safeParse(gameKeyStr);
+  if (gameKeyParsed.error) {
     res.status(400).send({ error: "Poorly-formed request" });
     return;
   }
@@ -32,13 +55,12 @@ export const postCreate: RestAPI<GameInfo> = async (req, res) => {
     return;
   }
 
-  const game = await createGame(user, body.data.payload, new Date());
+  const game = await createGame(user, gameKeyParsed.data, new Date(), vsBot);
   res.send(game);
 };
 
 /**
- * Handle GET requests to `/api/game/:id`. Returns either 404 or a game info
- * object.
+ * Handle GET requests to `/api/game/:id`.
  */
 export const getById: RestAPI<GameInfo, { id: string }> = async (req, res) => {
   const game = await getGameById(req.params.id);
@@ -46,37 +68,20 @@ export const getById: RestAPI<GameInfo, { id: string }> = async (req, res) => {
     res.status(404).send({ error: "Game not found" });
     return;
   }
-
   res.send(game);
 };
 
 /**
- * Handle GET requests to `/api/game/list` by returning information about all
- * games, sorted in reverse chronological order by creation.
+ * Handle GET requests to `/api/game/list`.
  */
 export const getList: RestAPI<GameInfo[]> = async (req, res) => {
   res.send(await getGames());
 };
 
-/**
- * Each active game player gets a dedicated room that sends messages
- * to just their socket connections. This function derives that room name from
- * the game id and the username.
- *
- * @param gameId - the game id, also the 'base' room name
- * @param userId - user id (not username!)
- * @returns a room name unique to that game id and user
- */
 function userRoom(gameId: string, user: string) {
   return `${gameId}-${user}`;
 }
 
-/**
- * Handle the socket request sent by a user when they load to a game page. The
- * server's job is to respond with full information about the game's current
- * players and the appropriate view of the game's state. The server also needs
- * to register the user for future updates about the game's state.
- */
 export const socketWatch: SocketAPI = (socket) => async (body) => {
   try {
     const { auth, payload: gameId } = withAuth(z.string()).parse(body);
@@ -90,9 +95,6 @@ export const socketWatch: SocketAPI = (socket) => async (body) => {
   }
 };
 
-/**
- * Broadcast view updates to appropriate users
- */
 function sendViewUpdates(io: GameServer, gameId: string, updates: GameViewUpdates) {
   io.to(gameId).emit("gameStateUpdated", { ...updates.watchers, forPlayer: false });
   for (const { userId, view } of updates.players) {
@@ -100,26 +102,18 @@ function sendViewUpdates(io: GameServer, gameId: string, updates: GameViewUpdate
   }
 }
 
-/**
- * Handle the socket request sent by a user when they try to join a game.
- */
 export const socketJoinAsPlayer: SocketAPI = (socket, io) => async (body) => {
   try {
     const { auth, payload: gameId } = withAuth(z.string()).parse(body);
     const user = await enforceAuth(auth);
     const game = await joinGame(gameId, user);
 
-    // Let everyone know the user joined (`io` instead of `socket` includes
-    // the joiner)
     io.to(gameId).emit("gamePlayersUpdated", game.players);
 
-    // This socket should receive user-specific updates for this game, if it
-    // isn't already
     if (!socket.rooms.has(userRoom(gameId, user.userId))) {
       await socket.join(userRoom(gameId, user.userId));
     }
 
-    // If the game is full, it starts automatically
     if (game.players.length === gameServices[game.type].maxPlayers) {
       sendViewUpdates(io, gameId, await startGame(gameId, user));
     }
@@ -128,9 +122,6 @@ export const socketJoinAsPlayer: SocketAPI = (socket, io) => async (body) => {
   }
 };
 
-/**
- * Handle a request to start the game.
- */
 export const socketStart: SocketAPI = (socket, io) => async (body) => {
   try {
     const { auth, payload: gameId } = withAuth(z.string()).parse(body);
@@ -141,11 +132,6 @@ export const socketStart: SocketAPI = (socket, io) => async (body) => {
   }
 };
 
-/**
- * Handle a request to make a move in a game. After updating the game state,
- * this handler also generates a human-readable move description and broadcasts
- * it as a move log entry in the game's chat.
- */
 export const socketMakeMove: SocketAPI = (socket, io) => async (body) => {
   try {
     const {
@@ -156,11 +142,8 @@ export const socketMakeMove: SocketAPI = (socket, io) => async (body) => {
     const { views, moveDescription, chatId } = await updateGame(gameId, user, move);
     sendViewUpdates(io, gameId, views);
 
-    // Store the move description suffix and broadcast to the chat room
     const now = new Date();
     const moveLogPayload = await addMoveLogToChat(chatId, moveDescription, user, now);
-
-    // Broadcast the move log to the chat room
     io.to(chatId).emit("chatMoveLog", moveLogPayload);
   } catch (err) {
     logSocketError(socket, err);
