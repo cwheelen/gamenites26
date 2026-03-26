@@ -225,6 +225,7 @@ export default function BattleshipGame({
 
   // PHASE: PLACING
   if (view.phase === "placing") {
+    const placingView = view as import("@gamenite/shared").BattleshipPlacingView;
     return (
       <div className="content spacedSection">
         <ol>
@@ -306,16 +307,20 @@ export default function BattleshipGame({
               Orientation: {orientation ? "Horizontal" : "Vertical"}
             </button>
             <br />
-            <button onClick={handleSubmit} disabled={Boolean(!allPlaced || view.iPlaced)}>
+            <button onClick={handleSubmit} disabled={Boolean(!allPlaced || placingView.iPlaced)}>
               Place ships
             </button>
           </div>
         </div>
         <div>
-          {view.iPlaced ? "You have placed your ships." : "You have not placed your ships yet."}
+          {placingView.iPlaced
+            ? "You have placed your ships."
+            : "You have not placed your ships yet."}
         </div>
         <div>
-          {view.opponentPlaced ? "Opponent has placed their ships." : "Waiting for opponent..."}
+          {placingView.opponentPlaced
+            ? "Opponent has placed their ships."
+            : "Waiting for opponent..."}
         </div>
       </div>
     );
@@ -323,22 +328,25 @@ export default function BattleshipGame({
 
   // PHASE: SHOOTING
   if (view.phase === "shooting") {
+    const shootingView = view as import("@gamenite/shared").BattleshipShootingView;
     return (
       <div className="content spacedSection">
-        <div>It is {view.myTurn ? "your" : "opponent's"} turn to shoot.</div>
+        <div>It is {shootingView.myTurn ? "your" : "opponent's"} turn to shoot.</div>
         <div style={{ display: "flex", gap: "2rem" }}>
           <div>
             <h3>Your Board</h3>
-            {renderOwnBoard(view.myBoard as OwnBoardCell[][] | null)}
+            {renderOwnBoard(shootingView.myBoard as OwnBoardCell[][] | null)}
           </div>
           <div>
             <h3>Opponent's Board</h3>
             {renderOpponentBoard(
-              view.opponentBoard as OpponentBoardCell[][],
+              shootingView.opponentBoard,
               (r, c) => makeMove({ type: "shoot", row: r, col: c }),
-              !view.myTurn,
+              !shootingView.myTurn,
             )}
-            <div>{view.myTurn ? "Click a cell to shoot." : "Waiting for opponent's move..."}</div>
+            <div>
+              {shootingView.myTurn ? "Click a cell to shoot." : "Waiting for opponent's move..."}
+            </div>
           </div>
         </div>
       </div>
@@ -347,17 +355,18 @@ export default function BattleshipGame({
 
   // PHASE: DONE
   if (view.phase === "done") {
+    const doneView = view as import("@gamenite/shared").BattleshipDoneView;
     return (
       <div className="content spacedSection">
-        <div>{view.iWon ? "You won!" : "You lost."}</div>
+        <div>{doneView.iWon ? "You won!" : "You lost."}</div>
         <div style={{ display: "flex", gap: "2rem" }}>
           <div>
             <h3>Your Board</h3>
-            {renderOwnBoard(view.myBoard as OwnBoardCell[][])}
+            {renderOwnBoard(doneView.myBoard)}
           </div>
           <div>
             <h3>Opponent's Board (Revealed)</h3>
-            {renderOwnBoard(view.opponentBoard as OwnBoardCell[][])}
+            {renderOwnBoard(doneView.opponentBoard)}
           </div>
         </div>
       </div>
