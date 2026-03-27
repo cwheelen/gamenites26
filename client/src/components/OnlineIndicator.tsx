@@ -1,4 +1,7 @@
-export default function OnlineIndicator({ status }: { status: "online" | "offline" }) {
+import useSocketsForPresence from "../hooks/useSocketsForPresence";
+
+export default function OnlineIndicator({ username }: { username: string }) {
+  const { status } = useSocketsForPresence(username);
   const color = status === "online" ? "green" : "red";
   return (
     <>

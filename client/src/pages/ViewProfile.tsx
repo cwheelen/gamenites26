@@ -147,7 +147,7 @@ export default function ViewProfile({ username }: ViewProfileProps) {
         <>
           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
             <h2>Profile for {componentState.user.display} </h2>
-            <OnlineIndicator status={presenceStatus} />
+            <OnlineIndicator username={username} />
             {friendButton()}
             {!blockStatus.blockedByMe && !blockStatus.blockedByThem && (
               <button className="primary narrow" onClick={() => navigate(`/dm/${username}`)}>

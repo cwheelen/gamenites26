@@ -5,6 +5,7 @@ import useLoginContext from "../hooks/useLoginContext.ts";
 import { getFriendList, acceptFriendRequest } from "../services/friendService.ts";
 import type { FriendListInfo, FriendRequestInfo } from "@gamenite/shared";
 import "./FriendsPage.css";
+import OnlineIndicator from "../components/OnlineIndicator.tsx";
 
 export default function FriendsPage() {
   const { user } = useLoginContext();
@@ -70,6 +71,7 @@ export default function FriendsPage() {
                   <Link to={`/profile/${req.from.username}`} className="friendListItem__name">
                     {req.from.display}
                   </Link>
+                  <OnlineIndicator username={req.from.username} />
                   <span className="smallAndGray">@{req.from.username}</span>
                 </div>
                 <button
@@ -105,6 +107,7 @@ export default function FriendsPage() {
                     <Link to={`/profile/${other.username}`} className="friendListItem__name">
                       {other.display}
                     </Link>
+                    <OnlineIndicator username={other.username} />
                     <span className="smallAndGray">@{other.username}</span>
                   </div>
                 </li>
