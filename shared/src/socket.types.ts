@@ -11,6 +11,20 @@ import { type GameMakeMovePayload, type GamePlayInfo, type TaggedGameView } from
 import { type SafeUserInfo } from "./user.types.ts";
 
 /**
+ * Payload sent to all players/watchers when a game's pause state changes.
+ * - `gameId`: the affected game
+ * - `isPaused`: whether the game is currently paused
+ * - `pausedBy`: the username of the player who paused, or null if not paused
+ * - `timeoutAt`: ISO timestamp when the pauser will be auto-forfeited, or null if not paused
+ */
+export interface GamePauseStatePayload {
+  gameId: string;
+  isPaused: boolean;
+  pausedBy: string | null;
+  timeoutAt: string | null;
+}
+
+/**
  * The Socket.io interface for client to server communication
  */
 export interface ClientToServerEvents {
@@ -21,6 +35,10 @@ export interface ClientToServerEvents {
   gameMakeMove: (payload: WithAuth<GameMakeMovePayload>) => void;
   gameStart: (payload: WithAuth<string>) => void;
   gameWatch: (payload: WithAuth<string>) => void;
+  /** Signal that the authenticated player is going away (pauses the game) */
+  gamePause: (payload: WithAuth<string>) => void;
+  /** Signal that the authenticated player is back (resumes the game) */
+  gameResume: (payload: WithAuth<string>) => void;
 }
 
 /**
@@ -35,4 +53,8 @@ export interface ServerToClientEvents {
   gamePlayersUpdated: (payload: SafeUserInfo[]) => void;
   gameStateUpdated: (payload: TaggedGameView & { forPlayer: boolean }) => void;
   gameWatched: (payload: GamePlayInfo) => void;
+  /** Broadcast whenever a game is paused or resumed */
+  gamePauseStateChanged: (payload: GamePauseStatePayload) => void;
+  /** Broadcast when a paused player's timeout expires and they are forfeited */
+  gameTimedOut: (payload: { gameId: string; forfeitedPlayer: string }) => void;
 }

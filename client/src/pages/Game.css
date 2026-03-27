@@ -4,3 +4,24 @@ div.gameContainer {
   overflow-y: clip;
   grid-template-columns: 1fr 1fr;
 }
+
+.pauseBanner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  padding: 0.75rem 1.25rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.pauseCountdown {
+  margin-left: auto;
+  font-weight: bold;
+  color: #c0392b;
+}
+
+.pauseControls {
+  margin-bottom: 0.75rem;
+}
