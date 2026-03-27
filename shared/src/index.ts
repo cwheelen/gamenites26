@@ -30,3 +30,4 @@ export {
   type CreateFriend,
   zCreateFriend,
 } from "./friends.type.ts";
+export * from "./invite.type.ts";

@@ -173,6 +173,7 @@ export interface UserRecord {
   username: string; // References Auth records
   display: string;
   createdAt: DateISO;
+  lastOnline: DateISO;
 }
 
 /**
@@ -196,5 +197,21 @@ export interface FriendRequestRecord {
  */
 export interface FriendshipRecord {
   users: [RecordId, RecordId]; // References User records
+  createdAt: DateISO;
+}
+
+/**
+ * Represents a game invite in the database.
+ * - `from`: the user who sent the invite
+ * - `to`: the user who received the invite
+ * - `gameId`: the game this invite is for
+ * - `status`: the current status of the invite
+ * - `createdAt`: when the invite was sent
+ */
+export interface InviteRecord {
+  from: RecordId;
+  to: RecordId;
+  gameId: RecordId;
+  status: "pending" | "accepted" | "declined" | "expired";
   createdAt: DateISO;
 }

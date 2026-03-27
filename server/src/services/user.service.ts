@@ -1,6 +1,7 @@
 import { type SafeUserInfo, type UserUpdateRequest } from "@gamenite/shared";
 import { getUserByUsername, updateAuth } from "./auth.service.ts";
 import { UserRepo } from "../repository.ts";
+import { getUserStatus } from "./presence.service.ts";
 
 const disallowedUsernames = new Set(["login", "signup", "list"]);
 
@@ -16,6 +17,7 @@ export async function populateSafeUserInfo(userId: string): Promise<SafeUserInfo
     username: record.username,
     display: record.display,
     createdAt: new Date(record.createdAt),
+    lastOnline: record.lastOnline ? new Date(record.lastOnline) : new Date(record.createdAt),
   });
 }
 
@@ -39,12 +41,14 @@ export async function createUser(
   const id = await UserRepo.add({
     username,
     createdAt: createdAt.toISOString(),
+    lastOnline: createdAt.toISOString(),
     display: username,
   });
   await updateAuth(username, password, id);
   return Promise.resolve({
     username,
     createdAt,
+    lastOnline: createdAt,
     display: username,
   });
 }
@@ -87,4 +91,23 @@ export async function updateUser(
   if (display !== undefined) newUser.display = display;
   await UserRepo.set(user.userId, newUser);
   return populateSafeUserInfo(user.userId);
+}
+
+export async function getStatus(username: string): Promise<{
+  status: "online" | "offline";
+  lastOnline: Date;
+}> {
+  const user = await getUserByUsername(username);
+
+  if (!user) throw new Error(`No user for username ${username}`);
+
+  const status = getUserStatus(user.userId);
+  const safeUser = await populateSafeUserInfo(user.userId);
+  return { status, lastOnline: safeUser.lastOnline };
+}
+
+export async function persistLastOnline(userId: string): Promise<SafeUserInfo> {
+  const user = await UserRepo.get(userId);
+  await UserRepo.set(userId, { ...user, lastOnline: new Date().toISOString() });
+  return populateSafeUserInfo(userId);
 }

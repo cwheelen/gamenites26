@@ -33,8 +33,18 @@ describe("POST /api/friend/create", () => {
     expect(response.body).toStrictEqual({
       friendId: expect.anything(),
       users: [
-        { username: expect.any(String), display: expect.any(String), createdAt: expect.anything() },
-        { username: expect.any(String), display: expect.any(String), createdAt: expect.anything() },
+        {
+          username: "user1",
+          display: expect.any(String),
+          createdAt: expect.anything(),
+          lastOnline: expect.anything(),
+        },
+        {
+          username: "user2",
+          display: expect.any(String),
+          createdAt: expect.anything(),
+          lastOnline: expect.anything(),
+        },
       ],
       createdAt: expect.anything(),
     });
@@ -61,8 +71,18 @@ describe("GET /api/friend/:id", () => {
     expect(response.body).toStrictEqual({
       friendId: created.body.friendId,
       users: [
-        { username: expect.any(String), display: expect.any(String), createdAt: expect.anything() },
-        { username: expect.any(String), display: expect.any(String), createdAt: expect.anything() },
+        {
+          username: "user0",
+          display: expect.any(String),
+          createdAt: expect.anything(),
+          lastOnline: expect.anything(),
+        },
+        {
+          username: "user1",
+          display: expect.any(String),
+          createdAt: expect.anything(),
+          lastOnline: expect.anything(),
+        },
       ],
       createdAt: expect.anything(),
     });

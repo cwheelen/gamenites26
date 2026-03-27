@@ -6,11 +6,13 @@ import { z } from "zod";
  * - `username`: unique username of the user
  * - `display`: A display name
  * - `createdAt`: when this when the user registered.
+ * - `lastOnline`: when the user was last online.
  */
 export interface SafeUserInfo {
   username: string;
   display: string;
   createdAt: Date;
+  lastOnline: Date;
 }
 
 /*** TYPES USED IN THE USER API ***/

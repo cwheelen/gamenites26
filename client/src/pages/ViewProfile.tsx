@@ -7,6 +7,8 @@ import useAuth from "../hooks/useAuth.ts";
 import { useNavigate } from "react-router-dom";
 import { sendFriendRequest, getFriendshipStatus } from "../services/friendService.ts";
 import { blockUser, unblockUser, getBlockStatus } from "../services/blockService.ts";
+import useSocketsForPresence from "../hooks/useSocketsForPresence";
+import OnlineIndicator from "../components/OnlineIndicator";
 
 interface ViewProfileProps {
   username: string;
@@ -28,6 +30,7 @@ export default function ViewProfile({ username }: ViewProfileProps) {
   const [err, setErr] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [blocking, setBlocking] = useState(false);
+  const { status: presenceStatus } = useSocketsForPresence(username);
 
   useEffect(() => {
     let cancel = false;
@@ -40,7 +43,10 @@ export default function ViewProfile({ username }: ViewProfileProps) {
         if ("error" in response) {
           setComponentState({ type: "error", msg: response.error });
         } else {
-          setComponentState({ type: "profile", user: response });
+          setComponentState({
+            type: "profile",
+            user: response,
+          });
         }
       })
       .catch((err) => {
@@ -143,7 +149,8 @@ export default function ViewProfile({ username }: ViewProfileProps) {
       return (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-            <h2>Profile for {componentState.user.display}</h2>
+            <h2>Profile for {componentState.user.display} </h2>
+            <OnlineIndicator status={presenceStatus} />
             {friendButton()}
             {!blockStatus.blockedByMe && !blockStatus.blockedByThem && (
               <button className="primary narrow" onClick={() => navigate(`/dm/${username}`)}>
@@ -164,10 +171,22 @@ export default function ViewProfile({ username }: ViewProfileProps) {
             <p className="smallAndGray">This user has restricted who can contact them.</p>
           )}
           {err && <p className="error-message">{err}</p>}
+
+
           <div>
             <ul>
               <li>Username: {componentState.user.username}</li>
               <li>Account created {timeSince(componentState.user.createdAt)}</li>
+              {presenceStatus === "online" ? (
+                <li>Last online: Currently online</li>
+              ) : (
+                <li>
+                  Last online:{" "}
+                  {componentState.user.lastOnline
+                    ? timeSince(componentState.user.lastOnline)
+                    : "N/A"}
+                </li>
+              )}
             </ul>
           </div>
         </>
