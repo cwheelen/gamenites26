@@ -1,3 +1,4 @@
+/* eslint-disable import/no-duplicates */
 import {
   type ChatInfo,
   type ChatMoveLogPayload,
@@ -9,6 +10,7 @@ import { type NewMessagePayload } from "./message.types.ts";
 import { type WithAuth } from "./auth.types.ts";
 import { type GameMakeMovePayload, type GamePlayInfo, type TaggedGameView } from "./game.types.ts";
 import { type SafeUserInfo } from "./user.types.ts";
+import { type MessageInfo } from "./message.types.ts";
 import type { InviteInfo } from "./invite.type.ts";
 
 /**
@@ -34,6 +36,11 @@ export interface ServerToClientEvents {
   chatNewMessage: (payload: ChatNewMessagePayload) => void;
   chatUserJoined: (payload: ChatUserJoinedPayload) => void;
   chatUserLeft: (payload: ChatUserLeftPayload) => void;
+  dmNotification: (payload: {
+    fromUsername: string;
+    fromDisplay: string;
+    message: MessageInfo;
+  }) => void;
   gamePlayersUpdated: (payload: SafeUserInfo[]) => void;
   gameStateUpdated: (payload: TaggedGameView & { forPlayer: boolean }) => void;
   gameWatched: (payload: GamePlayInfo) => void;

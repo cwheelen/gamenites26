@@ -148,3 +148,14 @@ hr {
   font-size: 0.75rem;
   color: var(--gray-foreground);
 }
+
+/** Clickable username links **/
+.userLink {
+  color: cornflowerblue;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.userLink:hover {
+  text-decoration: underline;
+}

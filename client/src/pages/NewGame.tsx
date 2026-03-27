@@ -2,7 +2,8 @@ import useNewGameForm from "../hooks/useNewGameForm.ts";
 import { gameNames } from "../util/consts.ts";
 
 export default function NewGame() {
-  const { gameKey, handleInputChange, err, handleSubmit } = useNewGameForm();
+  const { gameKey, vsBot, handleInputChange, handleVsBotChange, err, handleSubmit } =
+    useNewGameForm();
 
   return (
     <form className="content spacedSection" onSubmit={handleSubmit}>
@@ -17,6 +18,17 @@ export default function NewGame() {
           ))}
         </select>
       </div>
+
+      {/* Connect 4 bot */}
+      {gameKey === "connect4" && (
+        <div>
+          <label>
+            <input type="checkbox" checked={vsBot} onChange={handleVsBotChange} /> Play against a
+            bot (CPU)
+          </label>
+        </div>
+      )}
+
       {err && <p className="error-message">{err}</p>}
       <div>
         <button className="primary narrow">Create New Game</button>

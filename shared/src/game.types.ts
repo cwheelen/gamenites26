@@ -66,13 +66,16 @@ export * from "./games/nim.types.ts";
 import type { GuessView } from "./games/guess.types.ts";
 export * from "./games/guess.types.ts";
 
+import type { Connect4View } from "./games/connect4.types.ts";
+export * from "./games/connect4.types.ts";
+
 /**
  * A GameKey selects which game is being played. There needs to be exactly one
  * key for each game. See README.md for the operations that are required to
  * add a new game.
  */
 export type GameKey = z.infer<typeof zGameKey>;
-export const zGameKey = z.union([z.literal("nim"), z.literal("guess")]);
+export const zGameKey = z.union([z.literal("nim"), z.literal("guess"), z.literal("connect4")]);
 
 /**
  * The TaggedGameView type allows the views for different game to be
@@ -81,4 +84,7 @@ export const zGameKey = z.union([z.literal("nim"), z.literal("guess")]);
  * Each game should have a tagged game view. The `type` should be the game's
  * GameKey, and the `view` should be the type of the games view.
  */
-export type TaggedGameView = { type: "nim"; view: NimView } | { type: "guess"; view: GuessView };
+export type TaggedGameView =
+  | { type: "nim"; view: NimView }
+  | { type: "guess"; view: GuessView }
+  | { type: "connect4"; view: Connect4View };

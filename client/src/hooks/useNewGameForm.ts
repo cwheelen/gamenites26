@@ -9,21 +9,26 @@ import { createGame } from "../services/gameService.ts";
  * @throws if outside a LoginContext
  * @returns an object containing
  *  - Form value `gameKey`
+ *  - Form value `vsBot` — true when the user wants to play Connect 4 vs the CPU
  *  - Possibly-null error message `err`
- *  - Form handlers `handleInputChange` and `handleSubmit`
+ *  - Form handlers `handleInputChange`, `handleVsBotChange`, and `handleSubmit`
  */
 export default function useNewGameForm() {
   const [gameKey, setGameKey] = useState<GameKey | "">("");
+  const [vsBot, setVsBot] = useState(false); // ← new
   const [err, setErr] = useState<string | null>(null);
   const auth = useAuth();
   const navigate = useNavigate();
 
   const handleInputChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setErr(null);
-
-    // type assertion is safe because NewGame.tsx only allows selection of
-    // valid game keys
+    setVsBot(false);
     setGameKey(e.target.value as GameKey | "");
+  };
+
+  // Bot handler
+  const handleVsBotChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setVsBot(e.target.checked);
   };
 
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
@@ -34,7 +39,7 @@ export default function useNewGameForm() {
       return;
     }
     setErr(null);
-    const game = await createGame(auth, gameKey);
+    const game = await createGame(auth, gameKey, vsBot);
     if ("error" in game) {
       setErr(game.error);
       return;
@@ -44,8 +49,10 @@ export default function useNewGameForm() {
 
   return {
     gameKey,
+    vsBot,
     err,
     handleInputChange,
+    handleVsBotChange,
     handleSubmit,
   };
 }

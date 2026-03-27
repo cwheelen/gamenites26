@@ -8,6 +8,8 @@ import Layout from "./components/Layout.tsx";
 import Home from "./pages/Home.tsx";
 import ThreadList from "./pages/ThreadList.tsx";
 import Profile from "./pages/Profile.tsx";
+import FriendsPage from "./pages/FriendsPage.tsx";
+import DirectMessagePage from "./pages/DirectMessagePage.tsx";
 import { io } from "socket.io-client";
 import type { GameSocket } from "./util/types.ts";
 import LoggedInRoute from "./components/LoggedInRoute.tsx";
@@ -71,6 +73,8 @@ export default function App() {
             <Route path="/game/:gameId" element={<Game />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/profile/:username" element={<Profile />} />
+            <Route path="/friends" element={<FriendsPage />} />
+            <Route path="/dm/:username" element={<DirectMessagePage />} />
             <Route path="/*" element={<NoSuchRoute />} />
           </Route>
         </Routes>
