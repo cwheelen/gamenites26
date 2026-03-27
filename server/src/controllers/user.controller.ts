@@ -129,6 +129,7 @@ export const socketPresenceConnect: SocketAPI = (socket, io) => async (body) => 
     const user = await enforceAuth(auth);
     const becameOnline = await register(user.userId, socket.id);
     await socket.join("presence");
+    await socket.join(`notify:${user.userId}`);
 
     if (becameOnline) {
       io.to("presence").emit("userStatusChanged", {

@@ -16,3 +16,4 @@ export * from "./socket.types.ts";
 export * from "./thread.types.ts";
 export * from "./user.types.ts";
 export * from "./friends.type.ts";
+export * from "./invite.type.ts";

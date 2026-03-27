@@ -10,6 +10,7 @@ import * as leaderboard from "./controllers/leaderboard.controller.ts";
 import * as user from "./controllers/user.controller.ts";
 import * as thread from "./controllers/thread.controller.ts";
 import * as friend from "./controllers/friends.controller.ts";
+import * as invite from "./controllers/invite.controller.ts";
 import { type GameServer } from "./types.ts";
 import { unregisterAndEmitOffline } from "./services/presence.service.ts";
 
@@ -71,6 +72,14 @@ app.use(
         .get("/list/:username", friend.getRequestList)
         .get("/:id", friend.getFriendRequest)
         .put("update", friend.putUpdateFriendRequest),
+    )
+    .use(
+      "/invite",
+      Router()
+        .post("/create", invite.makePostCreateGameInvite(io))
+        .get("/list/:username", invite.getInvitesByUsername)
+        .get("/:id", invite.getInviteByIdHandler)
+        .put("/update", invite.putUpdateGameInvite),
     ),
 );
 

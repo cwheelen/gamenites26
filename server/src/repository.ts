@@ -10,6 +10,7 @@ import type {
   UserRecord,
   FriendRequestRecord,
   FriendshipRecord,
+  InviteRecord,
 } from "./models.ts";
 
 export const AuthRepo = createRepo<AuthRecord>("auth");
@@ -22,3 +23,4 @@ export const ThreadRepo = createRepo<ThreadRecord>("thread");
 export const UserRepo = createRepo<UserRecord>("user");
 export const FriendRequestRepo = createRepo<FriendRequestRecord>("friend_request");
 export const FriendshipRepo = createRepo<FriendshipRecord>("friendship");
+export const InviteRepo = createRepo<InviteRecord>("invite");
