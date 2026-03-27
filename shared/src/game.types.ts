@@ -69,13 +69,21 @@ export * from "./games/guess.types.ts";
 import type { BattleshipView } from "./games/battleship.types.ts";
 export * from "./games/battleship.types.ts";
 
+import type { CheckersView } from "./games/checkers.types.ts";
+export * from "./games/checkers.types.ts";
+
 /**
  * A GameKey selects which game is being played. There needs to be exactly one
  * key for each game. See README.md for the operations that are required to
  * add a new game.
  */
 export type GameKey = z.infer<typeof zGameKey>;
-export const zGameKey = z.union([z.literal("nim"), z.literal("guess"), z.literal("battleship")]);
+export const zGameKey = z.union([
+  z.literal("nim"),
+  z.literal("guess"),
+  z.literal("battleship"),
+  z.literal("checkers"),
+]);
 
 /**
  * The TaggedGameView type allows the views for different game to be
@@ -87,4 +95,6 @@ export const zGameKey = z.union([z.literal("nim"), z.literal("guess"), z.literal
 export type TaggedGameView =
   | { type: "nim"; view: NimView }
   | { type: "guess"; view: GuessView }
-  | { type: "battleship"; view: BattleshipView };
+  | { type: "battleship"; view: BattleshipView }
+  | { type: "checkers"; view: CheckersView };
+  

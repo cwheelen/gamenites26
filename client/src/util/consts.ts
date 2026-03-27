@@ -4,6 +4,7 @@ export const gameNames: { [key in GameKey]: string } = {
   nim: "Nim",
   guess: "Number Guesser",
   battleship: "Battleship",
+  checkers: "Checkers",
 };
 
 /**
@@ -15,6 +16,6 @@ export const botSupportedGames: Set<GameKey> = new Set([
   "nim",
   "guess",
   "battleship",
+  "checkers",
   // "connect4",  -- uncomment when connect4 is added
-  // "checkers",  -- uncomment when checkers is added
 ]);
