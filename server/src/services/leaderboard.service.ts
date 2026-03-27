@@ -11,11 +11,23 @@ function makeKey(userId: string, gameType: GameKey): string {
 }
 
 /**
- * Get leaderboard entries for a specific game type
+ * Get leaderboard entries for a specific game type with pagination
  * @param gameType - The type of game to get leaderboard for
- * @returns Array of leaderboard entries sorted by wins (descending)
+ * @param page - The page number (1-based)
+ * @param limit - The number of entries per page
+ * @returns Object containing paginated leaderboard entries and metadata
  */
-export async function getLeaderboard(gameType: GameKey): Promise<LeaderboardEntry[]> {
+export async function getLeaderboard(
+  gameType: GameKey,
+  page: number = 1,
+  limit: number = 10,
+): Promise<{
+  entries: LeaderboardEntry[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}> {
   const allKeys = await LeaderboardRepo.getAllKeys();
   const gameKeys = allKeys.filter((key) => key.endsWith(`:${gameType}`));
   const records = await Promise.all(gameKeys.map((key) => LeaderboardRepo.get(key)));
@@ -31,7 +43,21 @@ export async function getLeaderboard(gameType: GameKey): Promise<LeaderboardEntr
       lastUpdated: record.lastUpdated,
     })),
   );
-  return entries.sort((a, b) => b.wins - a.wins);
+
+  const sortedEntries = entries.sort((a, b) => b.wins - a.wins);
+  const total = sortedEntries.length;
+  const totalPages = Math.ceil(total / limit);
+  const startIndex = (page - 1) * limit;
+  const endIndex = startIndex + limit;
+  const paginatedEntries = sortedEntries.slice(startIndex, endIndex);
+
+  return {
+    entries: paginatedEntries,
+    total,
+    page,
+    limit,
+    totalPages,
+  };
 }
 
 /**
