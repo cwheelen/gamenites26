@@ -70,7 +70,7 @@ export default function LoggedInRoute({ auth, socket, children }: LoggedInRouteP
       socket.off("dmNotification", handleDmNotification);
     };
   }, [socket, auth, location.pathname, navigate]);
-      
+
   useEffect(() => {
     if (!auth || !socket) return;
     const emitPresence = () => {

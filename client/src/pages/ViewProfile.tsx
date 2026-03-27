@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import type { SafeUserInfo, FriendRequestInfo } from "@gamenite/shared";
 import { useEffect, useState } from "react";
 import useTimeSince from "../hooks/useTimeSince";
@@ -34,8 +33,6 @@ export default function ViewProfile({ username }: ViewProfileProps) {
 
   useEffect(() => {
     let cancel = false;
-    setFriendship(null);
-    setBlockStatus({ blockedByMe: false, blockedByThem: false });
 
     getUserById(username)
       .then((response) => {
@@ -171,7 +168,6 @@ export default function ViewProfile({ username }: ViewProfileProps) {
             <p className="smallAndGray">This user has restricted who can contact them.</p>
           )}
           {err && <p className="error-message">{err}</p>}
-
 
           <div>
             <ul>
