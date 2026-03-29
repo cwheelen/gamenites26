@@ -25,7 +25,6 @@ export default function ViewProfile({ username }: ViewProfileProps) {
     let cancel = false;
 
     const fetchData = async () => {
-      // First fetch user info
       const userResponse = await getUserById(username);
       if (cancel) return;
 
@@ -34,8 +33,7 @@ export default function ViewProfile({ username }: ViewProfileProps) {
         return;
       }
 
-      // Then fetch stats for both games
-      const gameTypes: GameKey[] = ["nim", "guess"];
+      const gameTypes: GameKey[] = ["nim", "guess", "battleship", "checkers"];
       const statsPromises = gameTypes.map(async (gameType) => {
         const statResponse = await getUserLeaderboard(username, gameType);
         return { gameType, stats: statResponse };
@@ -47,6 +45,8 @@ export default function ViewProfile({ username }: ViewProfileProps) {
       const stats: { [key in GameKey]: LeaderboardEntry | null | { error: string } } = {
         nim: null,
         guess: null,
+        battleship: null,
+        checkers: null,
       };
 
       for (const { gameType, stats: statResponse } of statsResults) {
@@ -62,7 +62,6 @@ export default function ViewProfile({ username }: ViewProfileProps) {
         } else if (typeof statResponse === "object" && "error" in statResponse) {
           stats[gameType] = { error: statResponse.error };
         } else {
-          // Handle unexpected response types
           stats[gameType] = { error: `Unexpected response: ${JSON.stringify(statResponse)}` };
         }
       }
@@ -86,7 +85,7 @@ export default function ViewProfile({ username }: ViewProfileProps) {
     case "waiting":
       return <div>Loading...</div>;
     case "profile": {
-      const gameOptions: GameKey[] = ["nim", "guess"];
+      const gameOptions: GameKey[] = ["nim", "guess", "battleship", "checkers"];
       const stat = componentState.stats[selectedGame];
       return (
         <div className="spacedSection">
