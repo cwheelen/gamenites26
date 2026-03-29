@@ -4,7 +4,6 @@ import { type SocketAPI, type GameServer } from "../types.ts";
 import { enforceAuth } from "../services/auth.service.ts";
 import { logSocketError } from "./socket.controller.ts";
 import { GameRepo } from "../repository.ts";
-import { gameServices } from "../services/game.service.ts";
 import { updateLeaderboard } from "../services/leaderboard.service.ts";
 import { type GamePauseStatePayload } from "@gamenite/shared";
 

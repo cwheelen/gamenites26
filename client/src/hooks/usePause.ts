@@ -38,10 +38,8 @@ export default function usePause(gameId: string, isPlayer: boolean) {
 
   useEffect(() => {
     if (!pauseState.isPaused || !pauseState.timeoutAt) {
-      setSecondsLeft(null);
       return;
     }
-
     function tick() {
       if (!pauseState.timeoutAt) return;
       const remaining = Math.max(
@@ -50,10 +48,12 @@ export default function usePause(gameId: string, isPlayer: boolean) {
       );
       setSecondsLeft(remaining);
     }
-
     tick();
     const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      setSecondsLeft(null);
+    };
   }, [pauseState.isPaused, pauseState.timeoutAt]);
 
   function pause() {

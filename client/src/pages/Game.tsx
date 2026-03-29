@@ -71,7 +71,6 @@ export default function Game() {
   }, [socket]);
 
   const isPlayer = game?.players.some((p) => p.username === user.username) ?? false;
-  const isActive = game?.status !== "waiting";
   const { isPaused, pausedBy, secondsLeft, iAmPaused, pause, resume } = usePause(gameId!, isPlayer);
 
   if (!game) return null;

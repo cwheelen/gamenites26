@@ -33,17 +33,15 @@ function cloneBoard(board: CheckersBoard): CheckersBoard {
 /** Builds the initial board for a new game */
 function buildInitialBoard(): CheckersBoard {
   const board: CheckersBoard = Array.from({ length: CHECKERS_BOARD_SIZE }, () =>
-    Array(CHECKERS_BOARD_SIZE).fill(null),
+    Array.from({ length: CHECKERS_BOARD_SIZE }, (): CheckersPiece | null => null),
   );
 
   for (let row = 0; row < CHECKERS_BOARD_SIZE; row++) {
     for (let col = 0; col < CHECKERS_BOARD_SIZE; col++) {
       if (!isDarkSquare(row, col)) continue;
       if (row < CHECKERS_INITIAL_ROWS) {
-        // Player 1 starts at the top (low rows), moves toward high rows
         board[row][col] = { player: 1, isKing: false };
       } else if (row >= CHECKERS_BOARD_SIZE - CHECKERS_INITIAL_ROWS) {
-        // Player 0 starts at the bottom (high rows), moves toward low rows
         board[row][col] = { player: 0, isKing: false };
       }
     }
@@ -57,7 +55,7 @@ function buildInitialBoard(): CheckersBoard {
 /** Returns forward row directions for a player (kings get both) */
 function getForwardDirs(player: CheckersPlayer, isKing: boolean): number[] {
   if (isKing) return [-1, 1];
-  return player === 0 ? [-1] : [1]; // 0 moves up (decreasing row), 1 moves down
+  return player === 0 ? [-1] : [1];
 }
 
 // ---- Legal move generation ----
@@ -66,7 +64,7 @@ interface JumpState {
   row: number;
   col: number;
   board: CheckersBoard;
-  capturedKeys: Set<string>; // "row,col" of already-captured pieces in this chain
+  capturedKeys: Set<string>;
   steps: { row: number; col: number }[];
 }
 
@@ -83,25 +81,23 @@ function findJumpChains(piece: CheckersPiece, state: JumpState): { row: number; 
       const midRow = state.row + dr;
       const midCol = state.col + dc;
       const landRow = state.row + 2 * dr;
-      const landCol = state.col + 2 * dc;
+      const landCol = state.row + 2 * dc;
       const midKey = `${midRow},${midCol}`;
 
       if (!inBounds(landRow, landCol)) continue;
-      if (state.capturedKeys.has(midKey)) continue; // already captured in this chain
+      if (state.capturedKeys.has(midKey)) continue;
 
       const midPiece = state.board[midRow]?.[midCol];
-      if (!midPiece || midPiece.player === piece.player) continue; // no enemy to jump
+      if (!midPiece || midPiece.player === piece.player) continue;
 
       const landing = state.board[landRow][landCol];
-      if (landing !== null) continue; // landing square must be empty
+      if (landing !== null) continue;
 
-      // Simulate the jump to look for further jumps
       const newBoard = cloneBoard(state.board);
       newBoard[midRow][midCol] = null;
       newBoard[landRow][landCol] = piece;
       newBoard[state.row][state.col] = null;
 
-      // Check if piece would be kinged at this step (affects further jump dirs)
       const wouldKing =
         !piece.isKing &&
         ((piece.player === 0 && landRow === 0) ||
@@ -120,10 +116,8 @@ function findJumpChains(piece: CheckersPiece, state: JumpState): { row: number; 
       });
 
       if (furtherJumps.length > 0) {
-        // There are further jumps — add all extended chains
         results.push(...furtherJumps);
       } else {
-        // No further jumps — this is a complete chain
         results.push(newSteps);
       }
     }
@@ -145,7 +139,6 @@ function getLegalMoves(board: CheckersBoard, player: CheckersPlayer): CheckersMo
       const piece = board[row][col];
       if (!piece || piece.player !== player) continue;
 
-      // Find all jump chains for this piece
       const chains = findJumpChains(piece, {
         row,
         col,
@@ -158,8 +151,6 @@ function getLegalMoves(board: CheckersBoard, player: CheckersPlayer): CheckersMo
         jumps.push({ fromRow: row, fromCol: col, steps });
       }
 
-      // Simple (non-capture) moves — only if no jumps exist yet
-      // (We still collect them but will discard if any jumps exist)
       const dirs = getForwardDirs(player, piece.isKing);
       for (const dr of dirs) {
         for (const dc of [-1, 1]) {
@@ -173,7 +164,6 @@ function getLegalMoves(board: CheckersBoard, player: CheckersPlayer): CheckersMo
     }
   }
 
-  // Mandatory capture rule
   return jumps.length > 0 ? jumps : simple;
 }
 
@@ -203,7 +193,6 @@ function applyMove(
     const dr = step.row - currentRow;
     const dc = step.col - currentCol;
 
-    // If it's a jump (2 squares), remove the captured piece
     if (Math.abs(dr) === 2) {
       const midRow = currentRow + dr / 2;
       const midCol = currentCol + dc / 2;
@@ -214,7 +203,6 @@ function applyMove(
     currentRow = step.row;
     currentCol = step.col;
 
-    // Check for kinging at each step
     if (
       !currentPiece.isKing &&
       ((player === 0 && currentRow === 0) ||
@@ -262,14 +250,13 @@ export const checkersLogic: GameLogic<CheckersState, CheckersView> = {
   }),
 
   update: (state, movePayload, playerIndex) => {
-    if (state.winner !== null || state.isDraw) return null; // game already over
-    if (playerIndex !== state.nextPlayer) return null; // not your turn
+    if (state.winner !== null || state.isDraw) return null;
+    if (playerIndex !== state.nextPlayer) return null;
 
     const parsed = zCheckersMove.safeParse(movePayload);
     if (parsed.error) return null;
     const move = parsed.data;
 
-    // Validate move is in the legal move set
     const legalMoves = getLegalMoves(state.board, state.nextPlayer);
     const isLegal = legalMoves.some(
       (lm) =>
@@ -284,12 +271,10 @@ export const checkersLogic: GameLogic<CheckersState, CheckersView> = {
 
     const opponent = (1 - state.nextPlayer) as CheckersPlayer;
 
-    // Check win: opponent has no pieces or no legal moves
     const opponentPieces = countPieces(newBoard, opponent);
     const opponentMoves = getLegalMoves(newBoard, opponent);
     const currentPlayerWins = opponentPieces === 0 || opponentMoves.length === 0;
 
-    // Update draw counter: reset on capture or king move, else increment
     const newDrawCounter = wasCapture || wasKingMove ? 0 : state.drawCounter + 1;
     const isDraw = !currentPlayerWins && newDrawCounter >= DRAW_LIMIT;
 
@@ -321,16 +306,15 @@ export const checkersLogic: GameLogic<CheckersState, CheckersView> = {
     if (move.error) return " made a move";
 
     const { fromRow, fromCol, steps } = move.data;
-    const fromCol_letter = String.fromCharCode(65 + fromCol);
-    const from = `${fromCol_letter}${fromRow + 1}`;
+    const fromColLetter = String.fromCharCode(65 + fromCol);
+    const from = `${fromColLetter}${fromRow + 1}`;
     const last = steps[steps.length - 1];
-    const toCol_letter = String.fromCharCode(65 + last.col);
-    const to = `${toCol_letter}${last.row + 1}`;
+    const toColLetter = String.fromCharCode(65 + last.col);
+    const to = `${toColLetter}${last.row + 1}`;
 
-    const isCapture = steps.some((_, i) => {
+    const isCapture = steps.some((step, i) => {
       const prevRow = i === 0 ? fromRow : steps[i - 1].row;
-      const prevCol = i === 0 ? fromCol : steps[i - 1].col;
-      return Math.abs(steps[i].row - prevRow) === 2;
+      return Math.abs(step.row - prevRow) === 2;
     });
 
     if (newState.isDraw) return ` moved ${from}→${to} — draw by 40-move rule`;
@@ -344,7 +328,7 @@ export const checkersLogic: GameLogic<CheckersState, CheckersView> = {
 
   getWinners: (state) => {
     if (state.winner !== null) return [state.winner];
-    return []; // draw = no winners
+    return [];
   },
 };
 
