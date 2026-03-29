@@ -5,13 +5,18 @@ import { Server } from "socket.io";
 import { z } from "zod";
 import * as http from "node:http";
 import * as chat from "./controllers/chat.controller.ts";
+import * as block from "./controllers/block.controller.ts";
+import * as dm from "./controllers/dm.controller.ts";
 import * as game from "./controllers/game.controller.ts";
 import * as pause from "./controllers/pause.controller.ts";
 import * as leaderboard from "./controllers/leaderboard.controller.ts";
 import * as user from "./controllers/user.controller.ts";
 import * as thread from "./controllers/thread.controller.ts";
 import * as friend from "./controllers/friends.controller.ts";
+import * as myFriend from "./controllers/friend.controller.ts";
+import * as invite from "./controllers/invite.controller.ts";
 import { type GameServer } from "./types.ts";
+import { unregisterAndEmitOffline } from "./services/presence.service.ts";
 
 export const app = express();
 export const httpServer = http.createServer(app);
@@ -53,6 +58,7 @@ app.use(
         .post("/login", user.postLogin)
         .post("/signup", user.postSignup)
         .post("/:username", user.postByUsername)
+        .get("/:username/status", user.getStatusByUsername)
         .get("/:username", user.getByUsername),
     )
     .use(
@@ -70,6 +76,30 @@ app.use(
         .get("/list/:username", friend.getRequestList)
         .get("/:id", friend.getFriendRequest)
         .put("update", friend.putUpdateFriendRequest),
+    )
+    .use(
+      "/myFriend",
+      Router()
+        .post("/request", myFriend.postRequest)
+        .post("/accept", myFriend.postAccept)
+        .get("/list/:username", myFriend.getList)
+        .get("/status/:usernameA/:usernameB", myFriend.getStatus),
+    )
+    .use("/dm", Router().post("/open", dm.postOpen))
+    .use(
+      "/block",
+      Router()
+        .post("/block", block.postBlock)
+        .post("/unblock", block.postUnblock)
+        .get("/status/:viewerUsername/:targetUsername", block.getStatus),
+    )
+    .use(
+      "/invite",
+      Router()
+        .post("/create", invite.makePostCreateGameInvite(io))
+        .get("/list/:username", invite.getInvitesByUsername)
+        .get("/:id", invite.getInviteByIdHandler)
+        .put("/update", invite.putUpdateGameInvite),
     ),
 );
 
@@ -77,7 +107,8 @@ io.on("connection", (socket) => {
   const socketId = socket.id;
   console.log(`CONN [${socketId}] connected`);
 
-  socket.on("disconnect", () => {
+  socket.on("disconnect", async () => {
+    await unregisterAndEmitOffline(socketId, io);
     console.log(`CONN [${socketId}] disconnected`);
   });
 
@@ -90,6 +121,7 @@ io.on("connection", (socket) => {
   socket.on("gameStart", game.socketStart(socket, io));
   socket.on("gameWatch", game.socketWatch(socket, io));
 
+  socket.on("userPresenceConnect", user.socketPresenceConnect(socket, io));
   // Pause / away notification
   socket.on("gamePause", pause.socketPause(socket, io));
   socket.on("gameResume", pause.socketResume(socket, io));

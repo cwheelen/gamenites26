@@ -20,6 +20,7 @@ export type GameMode = "player" | "bot";
 export default function useNewGameForm() {
   const [gameKey, setGameKey] = useState<GameKey | "">("");
   const [gameMode, setGameMode] = useState<GameMode>("player");
+  const [vsBot, setVsBot] = useState(false); // ← new
   const [err, setErr] = useState<string | null>(null);
   const auth = useAuth();
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ export default function useNewGameForm() {
 
   const handleInputChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setErr(null);
+    setVsBot(false);
     const newKey = e.target.value as GameKey | "";
     setGameKey(newKey);
     // Reset mode to player if the newly selected game doesn't support bots
@@ -38,6 +40,11 @@ export default function useNewGameForm() {
 
   const handleModeChange = (mode: GameMode) => {
     setGameMode(mode);
+  };
+
+  // Bot handler
+  const handleVsBotChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setVsBot(e.target.checked);
   };
 
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {

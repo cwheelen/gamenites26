@@ -66,6 +66,9 @@ export * from "./games/nim.types.ts";
 import type { GuessView } from "./games/guess.types.ts";
 export * from "./games/guess.types.ts";
 
+import type { Connect4View } from "./games/connect4.types.ts";
+export * from "./games/connect4.types.ts";
+
 import type { BattleshipView } from "./games/battleship.types.ts";
 export * from "./games/battleship.types.ts";
 
@@ -81,6 +84,7 @@ export type GameKey = z.infer<typeof zGameKey>;
 export const zGameKey = z.union([
   z.literal("nim"),
   z.literal("guess"),
+  z.literal("connect4"),
   z.literal("battleship"),
   z.literal("checkers"),
 ]);
@@ -95,5 +99,6 @@ export const zGameKey = z.union([
 export type TaggedGameView =
   | { type: "nim"; view: NimView }
   | { type: "guess"; view: GuessView }
+  | { type: "connect4"; view: Connect4View }
   | { type: "battleship"; view: BattleshipView }
   | { type: "checkers"; view: CheckersView };

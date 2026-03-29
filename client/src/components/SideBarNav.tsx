@@ -1,7 +1,8 @@
 import "./SideBarNav.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, type NavLinkRenderProps } from "react-router-dom";
 import useAuth from "../hooks/useAuth.ts";
+import { getFriendList } from "../services/friendService.ts";
 
 /**
  * The SideBarNav component contains the primary naviagation menu. It
@@ -11,6 +12,16 @@ import useAuth from "../hooks/useAuth.ts";
 export default function SideBarNav() {
   const [showOptions, setShowOptions] = useState<boolean>(false);
   const { username } = useAuth();
+
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    getFriendList(username).then((result) => {
+      if (!("error" in result)) {
+        setPendingCount(result.pending.length);
+      }
+    });
+  }, [username]);
 
   const toggleOptions = () => {
     setShowOptions(!showOptions);
@@ -33,6 +44,14 @@ export default function SideBarNav() {
       <NavLink to="/forum" className={navClass}>
         Forum
       </NavLink>
+      <NavLink to="/friends" className={navClass}>
+        Friends
+      </NavLink>
+      {pendingCount > 0 && (
+        <span className="header__friendsBadge" aria-hidden="true">
+          {pendingCount}
+        </span>
+      )}
       <NavLink
         to={`/profile/${username}`}
         id="menu_user"

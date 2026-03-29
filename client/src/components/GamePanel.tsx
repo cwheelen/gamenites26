@@ -6,6 +6,9 @@ import GameDispatch from "../games/GameDispatch.tsx";
 import useSocketsForGame from "../hooks/useSocketsForGame.ts";
 import useTimeSince from "../hooks/useTimeSince.ts";
 import UserLink from "./UserLink.tsx";
+import { useState } from "react";
+import { createGameInvite } from "../services/inviteService.ts";
+import useAuth from "../hooks/useAuth.ts";
 
 /**
  * A game panel allows viewing the status and players of a live game
@@ -18,12 +21,30 @@ export default function GamePanel({
   minPlayers,
 }: GameInfo) {
   const { user } = useLoginContext();
+  const auth = useAuth();
   const timeSince = useTimeSince();
 
   const { view, players, userPlayerIndex, hasWatched, joinGame, startGame } = useSocketsForGame(
     gameId,
     initialPlayers,
   );
+
+  const [inviteUsername, setInviteUsername] = useState("");
+  const [inviteStatus, setInviteStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  const handleInvite = async () => {
+    setInviteStatus("sending");
+    try {
+      const res = await createGameInvite(auth, inviteUsername, gameId);
+      if ("inviteId" in res) {
+        setInviteStatus("sent");
+      } else {
+        setInviteStatus("error");
+      }
+    } catch (error) {
+      setInviteStatus("error");
+    }
+  };
 
   return hasWatched ? (
     <div className="gamePanel">
@@ -57,6 +78,30 @@ export default function GamePanel({
             <button className="primary narrow" onClick={startGame}>
               Start Game
             </button>
+          )
+        }
+        {
+          // If the game hasn't started and the user has joined but there can be more players added, show a section to invite friends
+          userPlayerIndex >= 0 && !view && players.length < minPlayers && (
+            <div className="inviteSection">
+              <input
+                type="text"
+                placeholder="Invite by username"
+                value={inviteUsername}
+                onChange={(e) => setInviteUsername(e.target.value)}
+              />
+              <button
+                className="secondary narrow"
+                onClick={handleInvite}
+                disabled={inviteStatus === "sending" || !inviteUsername}
+              >
+                {inviteStatus === "sending" ? "Sending..." : "Invite"}
+              </button>
+              {inviteStatus === "sent" && <span className="smallAndGreen">Invite sent!</span>}
+              {inviteStatus === "error" && (
+                <span className="smallAndRed">Error sending invite</span>
+              )}
+            </div>
           )
         }
       </div>

@@ -5,13 +5,18 @@ import type { APIResponse } from "../util/types.ts";
 const GAME_API_URL = `/api/game`;
 
 /**
- * Sends a POST request to create a game
+ * Sends a POST request to create a game.
+ * @param vsBot - Pass true to start a Connect 4 game against the CPU immediately.
  */
-export const createGame = async (auth: UserAuth, gameKey: GameKey): APIResponse<GameInfo> => {
+export const createGame = async (
+  auth: UserAuth,
+  gameKey: GameKey,
+  vsBot = false,
+): APIResponse<GameInfo> => {
   try {
     const res = await api.post<GameInfo | ErrorMsg>(`${GAME_API_URL}/create`, {
       auth,
-      payload: gameKey,
+      payload: { gameKey, vsBot },
     });
     return res.data;
   } catch (error) {

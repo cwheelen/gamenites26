@@ -63,3 +63,16 @@ export const getUserById = async (username: string): APIResponse<SafeUserInfo> =
     return exceptionToErrorMsg(error);
   }
 };
+
+export const getUserStatusByUsername = async (
+  username: string,
+): APIResponse<{ status: "online" | "offline"; lastOnline: Date }> => {
+  try {
+    const res = await api.get<{ status: "online" | "offline"; lastOnline: Date } | ErrorMsg>(
+      `${USER_API_URL}/${username}/status`,
+    );
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};

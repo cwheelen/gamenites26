@@ -1,0 +1,13 @@
+.profile__header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profile__blockBtn {
+  background-color: oklch(0.55 0.15 20);
+}
+
+.profile__blockBtn:hover {
+  background-color: oklch(0.45 0.15 20);
+}

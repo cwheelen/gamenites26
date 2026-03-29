@@ -25,6 +25,18 @@ export interface AuthRecord {
 }
 
 /**
+ * Represents a block relationship in the database.
+ * - `blocker`: username of the user who issued the block
+ * - `blocked`: username of the user who was blocked
+ * - `createdAt`: when the block was created
+ */
+export interface BlockRecord {
+  blocker: string;
+  blocked: string;
+  createdAt: DateISO;
+}
+
+/**
  * Represents a chat document in the database.
  * - `messages`: the ordered list of messages in the chat
  * - `moveLog`: the ordered list of move log entries for this chat
@@ -60,6 +72,34 @@ export interface CommentRecord {
   createdBy: RecordId; // References User records
   createdAt: DateISO;
   editedAt?: DateISO;
+}
+
+/**
+ * Represents a private direct message conversation between two users.
+ * - `userA`: one participant (stored as the alphabetically first username)
+ * - `userB`: the other participant
+ * - `chatId`: the underlying ChatRecord that stores the messages
+ * - `createdAt`: when the conversation was first opened
+ */
+export interface DirectMessageRecord {
+  userA: string; // alphabetically first username
+  userB: string; // alphabetically second username
+  chatId: RecordId; // References Chat records
+  createdAt: DateISO;
+}
+
+/**
+ * Represents a friend request or confirmed friendship in the database.
+ * - `from`: username of the user who sent the request
+ * - `to`: username of the user who received the request
+ * - `status`: whether the request is pending or accepted
+ * - `createdAt`: when the request was sent
+ */
+export interface FriendRecord {
+  from: string; // username of sender
+  to: string; // username of receiver
+  status: "pending" | "accepted";
+  createdAt: DateISO;
 }
 
 /**
@@ -133,6 +173,7 @@ export interface UserRecord {
   username: string; // References Auth records
   display: string;
   createdAt: DateISO;
+  lastOnline: DateISO;
 }
 
 /**
@@ -151,11 +192,26 @@ export interface FriendRequestRecord {
 
 /**
  * Represents a friendship in the database.
- * - `user1`: one user in the friendship
- * - `user2`: the other user in the friendship
+ * - `users`: the two users in the friendship
  * - `createdAt`: when the friendship was established
  */
 export interface FriendshipRecord {
   users: [RecordId, RecordId]; // References User records
+  createdAt: DateISO;
+}
+
+/**
+ * Represents a game invite in the database.
+ * - `from`: the user who sent the invite
+ * - `to`: the user who received the invite
+ * - `gameId`: the game this invite is for
+ * - `status`: the current status of the invite
+ * - `createdAt`: when the invite was sent
+ */
+export interface InviteRecord {
+  from: RecordId;
+  to: RecordId;
+  gameId: RecordId;
+  status: "pending" | "accepted" | "declined" | "expired";
   createdAt: DateISO;
 }

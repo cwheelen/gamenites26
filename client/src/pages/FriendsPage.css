@@ -1,0 +1,23 @@
+.friendListItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.25rem;
+}
+
+.friendListItem__info {
+  display: flex;
+  flex-direction: row;
+  gap: 0.1rem;
+}
+
+.friendListItem__name {
+  font-weight: 500;
+  text-decoration: none;
+  color: cornflowerblue;
+}
+
+.friendListItem__name:hover {
+  text-decoration: underline;
+}

@@ -16,12 +16,39 @@ import { logSocketError } from "./socket.controller.ts";
 import { checkAuth, enforceAuth } from "../services/auth.service.ts";
 import { isGamePaused } from "./pause.controller.ts";
 
+const zCreateGamePayload = z.object({
+  gameKey: zGameKey,
+  vsBot: z.boolean().optional().default(false),
+});
+
 /**
  * Handle POST requests to `/api/game/create` by creating a game.
  */
 export const postCreate: RestAPI<GameInfo> = async (req, res) => {
-  const body = withAuth(zGameKey).safeParse(req.body);
+  const body = withAuth(z.unknown()).safeParse(req.body);
   if (body.error) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const rawPayload = body.data.payload;
+  let gameKeyStr: string;
+  let vsBot = false;
+
+  if (typeof rawPayload === "string") {
+    gameKeyStr = rawPayload;
+  } else {
+    const parsed = zCreateGamePayload.safeParse(rawPayload);
+    if (parsed.error) {
+      res.status(400).send({ error: "Poorly-formed request" });
+      return;
+    }
+    gameKeyStr = parsed.data.gameKey;
+    vsBot = parsed.data.vsBot;
+  }
+
+  const gameKeyParsed = zGameKey.safeParse(gameKeyStr);
+  if (gameKeyParsed.error) {
     res.status(400).send({ error: "Poorly-formed request" });
     return;
   }
@@ -32,7 +59,7 @@ export const postCreate: RestAPI<GameInfo> = async (req, res) => {
     return;
   }
 
-  const game = await createGame(user, body.data.payload, new Date());
+  const game = await createGame(user, gameKeyParsed.data, new Date(), vsBot);
   res.send(game);
 };
 

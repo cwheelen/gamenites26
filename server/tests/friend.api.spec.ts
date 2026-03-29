@@ -1,5 +1,3 @@
-// Make this later
-
 import supertest from "supertest";
 import { describe, expect, it } from "vitest";
 import { app } from "../src/app.ts";
@@ -19,7 +17,7 @@ describe("POST /api/friend/create", () => {
       .post("/api/friend/create")
       .send({
         auth: { ...auth2, password: "no" },
-        payload: { username: "Evil title", friendUsername: "Evil contents" },
+        payload: { username: auth2.username, friendUsername: auth1.username },
       });
     expect(response.status).toBe(403);
   });
@@ -49,20 +47,31 @@ describe("GET /api/friend/:id", () => {
     expect(response.status).toBe(404);
   });
 
-  it("should return existing friend based on id", async () => {
-    const response = await supertest(app).get(`/api/friend/deadbeefdeadbeefdeadbeef`);
+  it("should return an existing friend record by id", async () => {
+    const created = await supertest(app)
+      .post("/api/friend/create")
+      .send({
+        auth: auth1,
+        payload: { username: auth1.username, friendUsername: auth2.username },
+      });
+    expect(created.status).toBe(200);
+
+    const response = await supertest(app).get(`/api/friend/${created.body.friendId}`);
+    expect(response.status).toBe(200);
     expect(response.body).toStrictEqual({
-      friendId: "deadbeefdeadbeefdeadbeef",
+      friendId: created.body.friendId,
       users: [
         {
           username: "user0",
           display: expect.any(String),
           createdAt: expect.anything(),
+          lastOnline: expect.anything(),
         },
         {
           username: "user1",
           display: expect.any(String),
           createdAt: expect.anything(),
+          lastOnline: expect.anything(),
         },
       ],
       createdAt: expect.anything(),
