@@ -8,6 +8,7 @@ import * as chat from "./controllers/chat.controller.ts";
 import * as block from "./controllers/block.controller.ts";
 import * as dm from "./controllers/dm.controller.ts";
 import * as game from "./controllers/game.controller.ts";
+import * as pause from "./controllers/pause.controller.ts";
 import * as leaderboard from "./controllers/leaderboard.controller.ts";
 import * as user from "./controllers/user.controller.ts";
 import * as thread from "./controllers/thread.controller.ts";
@@ -29,7 +30,7 @@ app.use(
     .use(
       "/game",
       express
-        .Router() //
+        .Router()
         .post("/create", game.postCreate)
         .get("/list", game.getList)
         .get("/:id", game.getById),
@@ -37,14 +38,14 @@ app.use(
     .use(
       "/leaderboard",
       express
-        .Router() //
+        .Router()
         .get("/:gameType", leaderboard.getByGameType)
         .get("/user/:username/:gameType", leaderboard.getUserStats),
     )
     .use(
       "/thread",
       express
-        .Router() //
+        .Router()
         .post("/create", thread.postCreate)
         .get("/list", thread.getList)
         .get("/:id", thread.getById)
@@ -52,7 +53,7 @@ app.use(
     )
     .use(
       "/user",
-      Router() // Any concrete routes here should be disallowed as usernames
+      Router()
         .post("/list", user.postList)
         .post("/login", user.postLogin)
         .post("/signup", user.postSignup)
@@ -64,7 +65,7 @@ app.use(
       "/friend",
       Router()
         .post("/create", friend.postCreateFriend)
-        .get("/list/:id", friend.getFriendList)
+        .get("/list/:username", friend.getFriendList)
         .get("/:id", friend.getFriend)
         .delete("/:id/by/:userId", friend.deleteFriend),
     )
@@ -121,11 +122,13 @@ io.on("connection", (socket) => {
   socket.on("gameWatch", game.socketWatch(socket, io));
 
   socket.on("userPresenceConnect", user.socketPresenceConnect(socket, io));
+  // Pause / away notification
+  socket.on("gamePause", pause.socketPause(socket, io));
+  socket.on("gameResume", pause.socketResume(socket, io));
 
   socket.onAny((name, payload) => {
     const zPayload = z.object({ auth: z.object({ username: z.string() }), payload: z.any() });
     const checked = zPayload.safeParse(payload);
-
     if (checked.error) {
       console.log(`RECV error: ${checked.error.message}`);
     } else {

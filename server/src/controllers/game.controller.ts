@@ -14,12 +14,16 @@ import { addMoveLogToChat } from "../services/chat.service.ts";
 import { z } from "zod";
 import { logSocketError } from "./socket.controller.ts";
 import { checkAuth, enforceAuth } from "../services/auth.service.ts";
+import { isGamePaused } from "./pause.controller.ts";
 
 const zCreateGamePayload = z.object({
   gameKey: zGameKey,
   vsBot: z.boolean().optional().default(false),
 });
 
+/**
+ * Handle POST requests to `/api/game/create` by creating a game.
+ */
 export const postCreate: RestAPI<GameInfo> = async (req, res) => {
   const body = withAuth(z.unknown()).safeParse(req.body);
   if (body.error) {
@@ -132,6 +136,10 @@ export const socketStart: SocketAPI = (socket, io) => async (body) => {
   }
 };
 
+/**
+ * Handle a request to make a move in a game.
+ * Moves are blocked if the game is currently paused.
+ */
 export const socketMakeMove: SocketAPI = (socket, io) => async (body) => {
   try {
     const {
@@ -139,6 +147,13 @@ export const socketMakeMove: SocketAPI = (socket, io) => async (body) => {
       payload: { gameId, move },
     } = withAuth(zGameMakeMovePayload).parse(body);
     const user = await enforceAuth(auth);
+
+    // Block moves while the game is paused
+    if (isGamePaused(gameId)) {
+      logSocketError(socket, new Error(`${user.username} tried to move in a paused game`));
+      return;
+    }
+
     const { views, moveDescription, chatId } = await updateGame(gameId, user, move);
     sendViewUpdates(io, gameId, views);
 

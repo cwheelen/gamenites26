@@ -1,0 +1,76 @@
+/* Grid label header cells */
+.battleship-label {
+  background: #e0e0e0;
+  font-weight: bold;
+  text-align: center;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  max-width: 40px;
+  max-height: 40px;
+  padding: 0;
+  border: 2px solid #333;
+}
+
+/* Battleship board styles */
+.battleship-board {
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.battleship-board td {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  max-width: 40px;
+  max-height: 40px;
+  border: 2px solid #333;
+  background: #eaf6ff;
+  transition: background 0.2s;
+  padding: 0;
+  overflow: hidden;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.battleship-emoji {
+  font-size: 1.2rem;
+  line-height: 40px;
+  height: 40px;
+  width: 40px;
+  display: inline-block;
+  vertical-align: middle;
+  pointer-events: none;
+}
+
+.battleship-board td.cell-ship {
+  background: #b3e5fc;
+}
+
+.battleship-board td.cell-hit {
+  background: #ff8a80;
+}
+
+.battleship-board td.cell-miss {
+  background: #cfd8dc;
+}
+
+.battleship-board td.cell-sunk {
+  background: #bdbdbd;
+}
+
+.battleship-board td button.cell-btn {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+  display: block;
+  margin: 0;
+  box-sizing: border-box;
+}

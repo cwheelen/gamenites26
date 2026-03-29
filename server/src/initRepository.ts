@@ -115,11 +115,33 @@ async function resetStoredUsers() {
   await createUser("user1", "pwd1111", new Date());
   await createUser("user2", "pwd2222", new Date());
   await createUser("user3", "pwd3333", new Date());
+  await createUser("user4", "pwd4444", new Date());
+  await createUser("user5", "pwd5555", new Date());
+  await createUser("user6", "pwd6666", new Date());
+  await createUser("user7", "pwd7777", new Date());
+  await createUser("user8", "pwd8888", new Date());
+  await createUser("user9", "pwd9999", new Date());
+  await createUser("user10", "pwd1010", new Date());
+  await createUser("user11", "pwd1111", new Date());
+  await createUser("user12", "pwd1212", new Date());
+  await createUser("user13", "pwd1313", new Date());
+  await createUser("user14", "pwd1414", new Date());
 
   await updateUser("user0", { display: "The Knight Of Games" });
   await updateUser("user1", { display: "Yāo" });
   await updateUser("user2", { display: "Sénior Dos" });
   await updateUser("user3", { display: "Frau Drei" });
+  await updateUser("user4", { display: "Game Master" });
+  await updateUser("user5", { display: "Nim Champion" });
+  await updateUser("user6", { display: "Strategy King" });
+  await updateUser("user7", { display: "Puzzle Solver" });
+  await updateUser("user8", { display: "Logic Lord" });
+  await updateUser("user9", { display: "Brain Teaser" });
+  await updateUser("user10", { display: "Mind Bender" });
+  await updateUser("user11", { display: "Think Tank" });
+  await updateUser("user12", { display: "Wisdom Warrior" });
+  await updateUser("user13", { display: "Intellect Icon" });
+  await updateUser("user14", { display: "Clever Conqueror" });
 }
 
 async function resetFriends() {
@@ -145,12 +167,81 @@ async function resetFriends() {
 }
 /** Reset stored leaderboard with example data */
 async function resetStoredLeaderboard() {
+  const user0id = (await getUserByUsername("user0"))!.userId;
+  const user1id = (await getUserByUsername("user1"))!.userId;
   const user2id = (await getUserByUsername("user2"))!.userId;
   const user3id = (await getUserByUsername("user3"))!.userId;
+  const user4id = (await getUserByUsername("user4"))!.userId;
+  const user5id = (await getUserByUsername("user5"))!.userId;
+  const user6id = (await getUserByUsername("user6"))!.userId;
+  const user7id = (await getUserByUsername("user7"))!.userId;
+  const user8id = (await getUserByUsername("user8"))!.userId;
+  const user9id = (await getUserByUsername("user9"))!.userId;
+  const user10id = (await getUserByUsername("user10"))!.userId;
+  const user11id = (await getUserByUsername("user11"))!.userId;
+  const user12id = (await getUserByUsername("user12"))!.userId;
+  const user13id = (await getUserByUsername("user13"))!.userId;
+  const user14id = (await getUserByUsername("user14"))!.userId;
 
-  // Add some sample leaderboard entries
-  await updateLeaderboard(user2id, "nim", false); // user2 lost a nim game
-  await updateLeaderboard(user3id, "nim", true); // user3 won a nim game
+  // Add sample leaderboard entries for Nim with varied win/loss records
+  // user0: 8 wins, 2 losses (80% win rate)
+  for (let i = 0; i < 8; i++) await updateLeaderboard(user0id, "nim", true);
+  for (let i = 0; i < 2; i++) await updateLeaderboard(user0id, "nim", false);
+
+  // user1: 6 wins, 4 losses (60% win rate)
+  for (let i = 0; i < 6; i++) await updateLeaderboard(user1id, "nim", true);
+  for (let i = 0; i < 4; i++) await updateLeaderboard(user1id, "nim", false);
+
+  // user2: 5 wins, 3 losses (62.5% win rate)
+  for (let i = 0; i < 5; i++) await updateLeaderboard(user2id, "nim", true);
+  for (let i = 0; i < 3; i++) await updateLeaderboard(user2id, "nim", false);
+
+  // user3: 7 wins, 1 loss (87.5% win rate)
+  for (let i = 0; i < 7; i++) await updateLeaderboard(user3id, "nim", true);
+  await updateLeaderboard(user3id, "nim", false);
+
+  // user4: 4 wins, 6 losses (40% win rate)
+  for (let i = 0; i < 4; i++) await updateLeaderboard(user4id, "nim", true);
+  for (let i = 0; i < 6; i++) await updateLeaderboard(user4id, "nim", false);
+
+  // user5: 9 wins, 1 loss (90% win rate)
+  for (let i = 0; i < 9; i++) await updateLeaderboard(user5id, "nim", true);
+  await updateLeaderboard(user5id, "nim", false);
+
+  // user6: 3 wins, 7 losses (30% win rate)
+  for (let i = 0; i < 3; i++) await updateLeaderboard(user6id, "nim", true);
+  for (let i = 0; i < 7; i++) await updateLeaderboard(user6id, "nim", false);
+
+  // user7: 6 wins, 2 losses (75% win rate)
+  for (let i = 0; i < 6; i++) await updateLeaderboard(user7id, "nim", true);
+  for (let i = 0; i < 2; i++) await updateLeaderboard(user7id, "nim", false);
+
+  // user8: 2 wins, 8 losses (20% win rate)
+  for (let i = 0; i < 2; i++) await updateLeaderboard(user8id, "nim", true);
+  for (let i = 0; i < 8; i++) await updateLeaderboard(user8id, "nim", false);
+
+  // user9: 7 wins, 3 losses (70% win rate)
+  for (let i = 0; i < 7; i++) await updateLeaderboard(user9id, "nim", true);
+  for (let i = 0; i < 3; i++) await updateLeaderboard(user9id, "nim", false);
+
+  // user10: 5 wins, 5 losses (50% win rate)
+  for (let i = 0; i < 5; i++) await updateLeaderboard(user10id, "nim", true);
+  for (let i = 0; i < 5; i++) await updateLeaderboard(user10id, "nim", false);
+
+  // user11: 8 wins, 0 losses (100% win rate)
+  for (let i = 0; i < 8; i++) await updateLeaderboard(user11id, "nim", true);
+
+  // user12: 4 wins, 4 losses (50% win rate)
+  for (let i = 0; i < 4; i++) await updateLeaderboard(user12id, "nim", true);
+  for (let i = 0; i < 4; i++) await updateLeaderboard(user12id, "nim", false);
+
+  // user13: 6 wins, 6 losses (50% win rate)
+  for (let i = 0; i < 6; i++) await updateLeaderboard(user13id, "nim", true);
+  for (let i = 0; i < 6; i++) await updateLeaderboard(user13id, "nim", false);
+
+  // user14: 3 wins, 2 losses (60% win rate)
+  for (let i = 0; i < 3; i++) await updateLeaderboard(user14id, "nim", true);
+  for (let i = 0; i < 2; i++) await updateLeaderboard(user14id, "nim", false);
 }
 
 export async function resetEverythingToDefaults() {

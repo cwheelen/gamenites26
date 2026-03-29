@@ -110,8 +110,13 @@ export const getFriend: RestAPI<FriendInfo> = async (req, res) => {
   res.send(friend);
 };
 
-export const getFriendList: RestAPI<FriendInfo[]> = async (req, res) => {
-  res.send(await getFriendshipsById(await populateSafeUserInfo(req.params.id)));
+export const getFriendList: RestAPI<FriendInfo[], { username: string }> = async (req, res) => {
+  const user = await getUserByUsername(req.params.username);
+  if (!user) {
+    res.status(404).send({ error: "User not found" });
+    return;
+  }
+  res.send(await getFriendshipsById(await populateSafeUserInfo(user.userId)));
 };
 
 export const deleteFriend: RestAPI<FriendInfo> = async (req, res) => {
