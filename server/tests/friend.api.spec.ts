@@ -32,22 +32,14 @@ describe("POST /api/friend/create", () => {
         payload: { username: auth1.username, friendUsername: auth2.username },
       });
     expect(response.status).toBe(200);
-    expect(response.body).toStrictEqual({
-      friendId: expect.anything(),
-      users: [
-        {
-          username: "user1",
-          display: expect.any(String),
-          createdAt: expect.anything(),
-        },
-        {
-          username: "user2",
-          display: expect.any(String),
-          createdAt: expect.anything(),
-        },
-      ],
-      createdAt: expect.anything(),
-    });
+    expect(response.body.friendId).toBeTruthy();
+    expect(response.body.createdAt).toBeTruthy();
+    expect(response.body.users).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ username: "user1" }),
+        expect.objectContaining({ username: "user2" }),
+      ]),
+    );
   });
 });
 

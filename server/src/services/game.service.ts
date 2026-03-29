@@ -4,6 +4,8 @@ import { populateSafeUserInfo } from "./user.service.ts";
 import { type GameServicer } from "../games/gameServiceManager.ts";
 import { nimGameService } from "../games/nim.ts";
 import { guessGameService } from "../games/guess.ts";
+import { battleshipGameService } from "../games/battleship.ts";
+import { checkersGameService } from "../games/checkers.ts";
 import { type GameViewUpdates, type UserWithId } from "../types.ts";
 import { GameRepo } from "../repository.ts";
 import { updateLeaderboard } from "./leaderboard.service.ts";
@@ -14,7 +16,11 @@ import { updateLeaderboard } from "./leaderboard.service.ts";
 export const gameServices: { [key in GameKey]: GameServicer } = {
   nim: nimGameService,
   guess: guessGameService,
+  battleship: battleshipGameService,
+  checkers: checkersGameService,
 };
+
+// ... rest of file unchanged below this point ...
 
 /**
  * Expand a stored game

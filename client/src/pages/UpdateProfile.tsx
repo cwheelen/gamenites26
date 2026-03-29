@@ -18,11 +18,13 @@ export default function UpdateProfile() {
   }>({
     nim: null,
     guess: null,
+    battleship: null,
+    checkers: null,
   });
 
   useEffect(() => {
     const fetchStats = async () => {
-      const gameTypes: GameKey[] = ["nim", "guess"];
+      const gameTypes: GameKey[] = ["nim", "guess", "battleship", "checkers"];
       const statsPromises = gameTypes.map(async (gameType) => {
         const statResponse = await getUserLeaderboard(user.username, gameType);
         return { gameType, stats: statResponse };
@@ -32,6 +34,8 @@ export default function UpdateProfile() {
       const newStats: { [key in GameKey]: LeaderboardEntry | null | { error: string } } = {
         nim: null,
         guess: null,
+        battleship: null,
+        checkers: null,
       };
 
       for (const { gameType, stats: statResponse } of statsResults) {
@@ -78,7 +82,7 @@ export default function UpdateProfile() {
               onChange={(e) => setSelectedGame(e.target.value as GameKey)}
               className="primary narrow"
             >
-              {(["nim", "guess"] as GameKey[]).map((game) => (
+              {(["nim", "guess", "battleship", "checkers"] as GameKey[]).map((game) => (
                 <option key={game} value={game}>
                   {gameNames[game]}
                 </option>
@@ -120,7 +124,7 @@ export default function UpdateProfile() {
           <button
             className="secondary narrow"
             onClick={(e) => {
-              e.preventDefault(); // Don't submit form
+              e.preventDefault();
               setDisplay(user.display);
             }}
           >
@@ -142,7 +146,7 @@ export default function UpdateProfile() {
           <button
             className="secondary narrow"
             onClick={(e) => {
-              e.preventDefault(); // Don't submit form
+              e.preventDefault();
               setPassword("");
               setConfirm("");
             }}
@@ -153,7 +157,7 @@ export default function UpdateProfile() {
             className="secondary narrow"
             aria-label="Toggle show password"
             onClick={(e) => {
-              e.preventDefault(); // Don't submit form
+              e.preventDefault();
               setShowPass((v) => !v);
             }}
           >
