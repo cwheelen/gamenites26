@@ -59,7 +59,7 @@ app.use(
       "/friend",
       Router()
         .post("/create", friend.postCreateFriend)
-        .get("/list/:id", friend.getFriendList)
+        .get("/list/:username", friend.getFriendList)
         .get("/:id", friend.getFriend)
         .delete("/:id/by/:userId", friend.deleteFriend),
     )

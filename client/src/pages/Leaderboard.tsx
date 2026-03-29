@@ -1,26 +1,84 @@
 import { useState, useEffect } from "react";
 import { getLeaderboard } from "../services/leaderboardService.ts";
-import type { LeaderboardEntry, GameKey } from "@gamenite/shared";
+import { api } from "../services/api.ts";
+import type { LeaderboardEntry, GameKey, FriendInfo } from "@gamenite/shared";
 import { gameNames } from "../util/consts.ts";
 import UserLink from "../components/UserLink.tsx";
 import { useNavigate } from "react-router-dom";
+import useLoginContext from "../hooks/useLoginContext.ts";
 import "./Leaderboard.css";
 
 export default function Leaderboard() {
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[] | { error: string } | null>(
-    null,
-  );
+  const [leaderboard, setLeaderboard] = useState<
+    | {
+        entries: LeaderboardEntry[];
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      }
+    | { error: string }
+    | null
+  >(null);
   const [selectedGame, setSelectedGame] = useState<GameKey>("nim");
+  const [friendsOnly, setFriendsOnly] = useState(false);
+  const [friends, setFriends] = useState<FriendInfo[] | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
+  const { user } = useLoginContext();
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
-      setLeaderboard(await getLeaderboard(selectedGame));
+      setLeaderboard(await getLeaderboard(selectedGame, currentPage, 10));
     };
     fetchLeaderboard();
-  }, [selectedGame]);
+  }, [selectedGame, currentPage]);
+
+  useEffect(() => {
+    if (friendsOnly) {
+      const fetchFriends = async () => {
+        try {
+          const response = await api.get<FriendInfo[]>(`/api/friend/list/${user.username}`);
+          setFriends(response.data);
+        } catch (error) {
+          setFriends([]);
+        }
+      };
+      fetchFriends();
+    }
+  }, [friendsOnly, user.username]);
 
   const gameOptions: GameKey[] = ["nim", "guess"];
+
+  const getFilteredLeaderboard = () => {
+    if (!leaderboard || "error" in leaderboard) {
+      return leaderboard;
+    }
+
+    if (!friendsOnly) {
+      return leaderboard;
+    }
+
+    if (!friends) {
+      return null; // Loading state while friends are being fetched
+    }
+
+    const friendUsernames = new Set(
+      friends.flatMap((friend) => [friend.users[0].username, friend.users[1].username]),
+    );
+    const filtered = leaderboard.entries.filter((entry) =>
+      friendUsernames.has(entry.user.username),
+    );
+
+    return {
+      ...leaderboard,
+      entries: filtered,
+      total: filtered.length,
+      totalPages: Math.ceil(filtered.length / leaderboard.limit),
+    };
+  };
+
+  const filteredLeaderboard = getFilteredLeaderboard();
 
   return (
     <div className="content spacedSection">
@@ -31,7 +89,10 @@ export default function Leaderboard() {
         <select
           id="gameSelect"
           value={selectedGame}
-          onChange={(e) => setSelectedGame(e.target.value as GameKey)}
+          onChange={(e) => {
+            setSelectedGame(e.target.value as GameKey);
+            setCurrentPage(1); // Reset to first page when changing games
+          }}
           className="primary narrow"
         >
           {gameOptions.map((game) => (
@@ -42,13 +103,32 @@ export default function Leaderboard() {
         </select>
       </div>
 
-      {leaderboard === null ? (
+      <div className="spacedSection" style={{ marginTop: "0.5rem" }}>
+        <label>
+          <input
+            type="checkbox"
+            checked={friendsOnly}
+            onChange={(e) => {
+              setFriendsOnly(e.target.checked);
+              setCurrentPage(1); // Reset to first page when toggling friends mode
+            }}
+            style={{ marginRight: "0.5rem" }}
+          />
+          Show only friends
+        </label>
+      </div>
+
+      {leaderboard === null || (friendsOnly && friends === null) ? (
         <div>Loading...</div>
-      ) : typeof leaderboard === "object" && "error" in leaderboard ? (
+      ) : "error" in leaderboard ? (
         <div className="error">{leaderboard.error}</div>
-      ) : Array.isArray(leaderboard) && leaderboard.length === 0 ? (
-        <div>No games played yet!</div>
-      ) : Array.isArray(leaderboard) ? (
+      ) : filteredLeaderboard &&
+        !("error" in filteredLeaderboard) &&
+        filteredLeaderboard.entries.length === 0 ? (
+        <div>{friendsOnly ? "No friends have played this game yet!" : "No games played yet!"}</div>
+      ) : filteredLeaderboard &&
+        !("error" in filteredLeaderboard) &&
+        filteredLeaderboard.entries.length > 0 ? (
         <div className="spacedSection">
           <table className="leaderboardTable">
             <thead>
@@ -65,9 +145,9 @@ export default function Leaderboard() {
               </tr>
             </thead>
             <tbody>
-              {leaderboard.map((entry, index) => (
+              {filteredLeaderboard.entries.map((entry: LeaderboardEntry, index: number) => (
                 <tr key={`${entry.user.username}:${entry.gameType}`}>
-                  <td>{index + 1}</td>
+                  <td>{(filteredLeaderboard.page - 1) * filteredLeaderboard.limit + index + 1}</td>
                   <td>
                     <UserLink user={entry.user} />
                   </td>
@@ -91,7 +171,47 @@ export default function Leaderboard() {
         <div className="error">Failed to load leaderboard data. Please try again later.</div>
       )}
 
-      <div className="spacedSection">
+      {filteredLeaderboard &&
+        !("error" in filteredLeaderboard) &&
+        filteredLeaderboard.totalPages > 1 && (
+          <div
+            className="spacedSection"
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: "1rem",
+              flexWrap: "nowrap",
+            }}
+          >
+            <button
+              className="primary narrow"
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              style={{ flexShrink: 0 }}
+            >
+              Previous
+            </button>
+
+            <span style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
+              Page {filteredLeaderboard.page} of {filteredLeaderboard.totalPages}
+            </span>
+
+            <button
+              className="primary narrow"
+              onClick={() =>
+                setCurrentPage(Math.min(filteredLeaderboard.totalPages, currentPage + 1))
+              }
+              disabled={currentPage === filteredLeaderboard.totalPages}
+              style={{ flexShrink: 0 }}
+            >
+              Next
+            </button>
+          </div>
+        )}
+
+      <div className="spacedSection" style={{ marginTop: "2rem" }}>
         <button className="primary narrow" onClick={() => navigate("/game/new")}>
           Play a Game
         </button>
