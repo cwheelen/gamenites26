@@ -38,6 +38,9 @@ export default function GameDispatch({
       return <GuessGame {...{ ...childProps, view: view.view }} />;
     case "battleship":
       return <BattleshipGame {...{ ...childProps, view: view.view }} />;
+    case "checkers":
+      // CheckersGame UI is pending implementation
+      return <div>Checkers UI coming soon</div>;
     default:
       return assertNever(view);
   }
