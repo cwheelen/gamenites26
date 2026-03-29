@@ -37,14 +37,16 @@ export default function NewGame() {
               type="button"
               className={`modeButton ${gameMode === "player" ? "active" : ""}`}
               onClick={() => handleModeChange("player")}
-              aria-pressed={gameMode === "player"}>
+              aria-pressed={gameMode === "player"}
+            >
               👤 vs Player
             </button>
             <button
               type="button"
               className={`modeButton ${gameMode === "bot" ? "active" : ""}`}
               onClick={() => handleModeChange("bot")}
-              aria-pressed={gameMode === "bot"}>
+              aria-pressed={gameMode === "bot"}
+            >
               🤖 vs Bot
             </button>
           </div>

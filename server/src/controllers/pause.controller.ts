@@ -90,7 +90,8 @@ export const socketPause: SocketAPI = (socket, io) => async (body) => {
 
     const game = await GameRepo.find(gameId);
     if (!game) throw new Error(`${user.username} paused invalid game`);
-    if (!game.state || game.done) throw new Error(`${user.username} paused a finished/unstarted game`);
+    if (!game.state || game.done)
+      throw new Error(`${user.username} paused a finished/unstarted game`);
 
     const playerIndex = game.players.findIndex((id) => id === user.userId);
     if (playerIndex < 0) throw new Error(`${user.username} paused a game they aren't in`);
@@ -139,7 +140,9 @@ export const socketResume: SocketAPI = (socket, io) => async (body) => {
 
     // Only the player who paused can resume
     if (entry.pausedByUsername !== user.username) {
-      throw new Error(`${user.username} tried to resume a game paused by ${entry.pausedByUsername}`);
+      throw new Error(
+        `${user.username} tried to resume a game paused by ${entry.pausedByUsername}`,
+      );
     }
 
     clearTimeout(entry.timer);

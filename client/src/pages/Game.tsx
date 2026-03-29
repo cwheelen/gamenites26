@@ -62,7 +62,7 @@ export default function Game() {
   // Keep players list and status fresh when a new player joins
   useEffect(() => {
     function onPlayersUpdated(players: SafeUserInfo[]) {
-      setGame((prev) => prev ? { ...prev, players, status: "active" } : prev);
+      setGame((prev) => (prev ? { ...prev, players, status: "active" } : prev));
     }
     socket.on("gamePlayersUpdated", onPlayersUpdated);
     return () => {
@@ -72,10 +72,7 @@ export default function Game() {
 
   const isPlayer = game?.players.some((p) => p.username === user.username) ?? false;
   const isActive = game?.status !== "waiting";
-  const { isPaused, pausedBy, secondsLeft, iAmPaused, pause, resume } = usePause(
-    gameId!,
-    isPlayer,
-  );
+  const { isPaused, pausedBy, secondsLeft, iAmPaused, pause, resume } = usePause(gameId!, isPlayer);
 
   if (!game) return null;
 

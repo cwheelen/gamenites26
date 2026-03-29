@@ -97,4 +97,3 @@ export type TaggedGameView =
   | { type: "guess"; view: GuessView }
   | { type: "battleship"; view: BattleshipView }
   | { type: "checkers"; view: CheckersView };
-  

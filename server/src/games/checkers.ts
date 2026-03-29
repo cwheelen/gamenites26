@@ -74,10 +74,7 @@ interface JumpState {
  * Recursively finds all jump chains starting from (row, col) for a given piece.
  * Returns all complete jump sequences (each sequence is an array of steps).
  */
-function findJumpChains(
-  piece: CheckersPiece,
-  state: JumpState,
-): { row: number; col: number }[][] {
+function findJumpChains(piece: CheckersPiece, state: JumpState): { row: number; col: number }[][] {
   const dirs = getForwardDirs(piece.player, piece.isKing);
   const results: { row: number; col: number }[][] = [];
 
@@ -283,11 +280,7 @@ export const checkersLogic: GameLogic<CheckersState, CheckersView> = {
     );
     if (!isLegal) return null;
 
-    const { newBoard, wasCapture, wasKingMove } = applyMove(
-      state.board,
-      move,
-      state.nextPlayer,
-    );
+    const { newBoard, wasCapture, wasKingMove } = applyMove(state.board, move, state.nextPlayer);
 
     const opponent = (1 - state.nextPlayer) as CheckersPlayer;
 
@@ -317,9 +310,8 @@ export const checkersLogic: GameLogic<CheckersState, CheckersView> = {
     drawCounter: state.drawCounter,
     isDraw: state.isDraw,
     winner: state.winner,
-    legalMoves: state.winner !== null || state.isDraw
-      ? []
-      : getLegalMoves(state.board, state.nextPlayer),
+    legalMoves:
+      state.winner !== null || state.isDraw ? [] : getLegalMoves(state.board, state.nextPlayer),
   }),
 
   tagView: (view) => ({ type: "checkers", view }),
