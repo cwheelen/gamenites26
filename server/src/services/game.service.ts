@@ -1,4 +1,9 @@
-import { type GameInfo, type GameKey, type TaggedGameView } from "@gamenite/shared";
+import {
+  type GameInfo,
+  type GameKey,
+  type TaggedGameView,
+  type Connect4State,
+} from "@gamenite/shared";
 import { createChat } from "./chat.service.ts";
 import { populateSafeUserInfo } from "./user.service.ts";
 import { type GameServicer } from "../games/gameServiceManager.ts";
@@ -10,7 +15,6 @@ import { checkersGameService } from "../games/checkers.ts";
 import { type GameViewUpdates, type UserWithId } from "../types.ts";
 import { GameRepo } from "../repository.ts";
 import { updateLeaderboard } from "./leaderboard.service.ts";
-import type { Connect4State } from "@gamenite/shared";
 
 /**
  * The service interface for individual games

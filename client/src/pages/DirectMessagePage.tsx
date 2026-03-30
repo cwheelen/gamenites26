@@ -23,8 +23,6 @@ export default function DirectMessagePage() {
 
   useEffect(() => {
     if (!username) return;
-    setDm(null);
-    setErr(null);
 
     openDM(auth, username).then((result) => {
       if ("error" in result) {

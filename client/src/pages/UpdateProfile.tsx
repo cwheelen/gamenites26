@@ -18,13 +18,14 @@ export default function UpdateProfile() {
   }>({
     nim: null,
     guess: null,
+    connect4: null,
     battleship: null,
     checkers: null,
   });
 
   useEffect(() => {
     const fetchStats = async () => {
-      const gameTypes: GameKey[] = ["nim", "guess", "battleship", "checkers"];
+      const gameTypes: GameKey[] = ["nim", "guess", "battleship", "checkers", "connect4"];
       const statsPromises = gameTypes.map(async (gameType) => {
         const statResponse = await getUserLeaderboard(user.username, gameType);
         return { gameType, stats: statResponse };
@@ -34,6 +35,7 @@ export default function UpdateProfile() {
       const newStats: { [key in GameKey]: LeaderboardEntry | null | { error: string } } = {
         nim: null,
         guess: null,
+        connect4: null,
         battleship: null,
         checkers: null,
       };
@@ -82,7 +84,7 @@ export default function UpdateProfile() {
               onChange={(e) => setSelectedGame(e.target.value as GameKey)}
               className="primary narrow"
             >
-              {(["nim", "guess", "battleship", "checkers"] as GameKey[]).map((game) => (
+              {(["nim", "guess", "battleship", "checkers", "connect4"] as GameKey[]).map((game) => (
                 <option key={game} value={game}>
                   {gameNames[game]}
                 </option>

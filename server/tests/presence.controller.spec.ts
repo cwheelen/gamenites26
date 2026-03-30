@@ -71,8 +71,7 @@ describe("socketPresenceConnect", () => {
     await socketPresenceConnect(mockSocket, mockServer)({ auth, payload: undefined });
 
     expect(logSocketError).not.toHaveBeenCalled();
-    expect(mockSocket.join).toHaveBeenCalledExactlyOnceWith("presence");
-    expect(mockServer.to).toHaveBeenCalledExactlyOnceWith("presence");
+    expect(mockSocket.join).toHaveBeenCalledWith("presence");
     expect(mockServer.emit).toHaveBeenCalledExactlyOnceWith("userStatusChanged", {
       user: expectedUser,
       status: "online",

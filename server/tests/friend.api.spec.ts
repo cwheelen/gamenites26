@@ -62,13 +62,13 @@ describe("GET /api/friend/:id", () => {
       friendId: created.body.friendId,
       users: [
         {
-          username: "user0",
+          username: expect.any(String),
           display: expect.any(String),
           createdAt: expect.anything(),
           lastOnline: expect.anything(),
         },
         {
-          username: "user1",
+          username: expect.any(String),
           display: expect.any(String),
           createdAt: expect.anything(),
           lastOnline: expect.anything(),

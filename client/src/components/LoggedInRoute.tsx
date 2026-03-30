@@ -2,7 +2,7 @@ import { type JSX, useEffect, useMemo } from "react";
 import { type AuthContext, LoginContext } from "../contexts/LoginContext.ts";
 import { type GameSocket } from "../util/types.ts";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import toast, { Toaster } from "react-hot-toast";
+import { Toaster, toast } from "react-hot-toast";
 
 interface LoggedInRouteParams {
   auth: AuthContext | null;

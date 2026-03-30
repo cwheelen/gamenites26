@@ -1,4 +1,4 @@
-import type { SafeUserInfo, FriendRequestInfo } from "@gamenite/shared";
+import type { SafeUserInfo, FriendRequestInfo, GameKey, LeaderboardEntry } from "@gamenite/shared";
 import { useEffect, useState } from "react";
 import useTimeSince from "../hooks/useTimeSince";
 import { getUserById } from "../services/userService";
@@ -52,7 +52,7 @@ export default function ViewProfile({ username }: ViewProfileProps) {
         return;
       }
 
-      const gameTypes: GameKey[] = ["nim", "guess", "battleship", "checkers"];
+      const gameTypes: GameKey[] = ["nim", "guess", "battleship", "checkers", "connect4"];
       const statsPromises = gameTypes.map(async (gameType) => {
         const statResponse = await getUserLeaderboard(username, gameType);
         return { gameType, stats: statResponse };
@@ -64,6 +64,7 @@ export default function ViewProfile({ username }: ViewProfileProps) {
       const stats: { [key in GameKey]: LeaderboardEntry | null | { error: string } } = {
         nim: null,
         guess: null,
+        connect4: null,
         battleship: null,
         checkers: null,
       };
