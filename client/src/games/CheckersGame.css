@@ -1,0 +1,58 @@
+/* Checkers-specific styles */
+
+.checkers-piece {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 36px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.piece-emoji {
+  font-size: 1.6rem;
+  line-height: 36px;
+  display: block;
+  width: 36px;
+  height: 36px;
+}
+
+.checkers-piece.red {
+  color: #d32f2f;
+  /* Make the circle fill the cell */
+}
+
+.checkers-piece.black {
+  color: #222;
+  /* Make the circle fill the cell */
+}
+
+.king-crown {
+  color: gold;
+  text-shadow: 0 0 2px #222;
+  font-weight: bold;
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+
+.king-crown {
+  color: gold;
+  text-shadow: 0 0 2px #222;
+  font-weight: bold;
+}
+
+.cell-selected {
+  background: #ffe082 !important;
+}
+
+.cell-legal {
+  background: #b2dfdb !important;
+}
+
+.cell-movable {
+  background: #ffd54f !important;
+  border: 2px solid #ff9800 !important;
+}

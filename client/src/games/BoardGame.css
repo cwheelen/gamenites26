@@ -1,0 +1,58 @@
+/* Shared board styles for grid-based games (Battleship, Checkers, etc.) */
+
+.board-label {
+  background: #e0e0e0;
+  font-weight: bold;
+  text-align: center;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  max-width: 40px;
+  max-height: 40px;
+  padding: 0;
+  border: 2px solid #333;
+}
+
+.board-table {
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.board-table td {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  max-width: 40px;
+  max-height: 40px;
+  border: 2px solid #333;
+  background: #eaf6ff;
+  transition: background 0.2s;
+  padding: 0;
+  overflow: hidden;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.cell-dark {
+  background: #90caf9;
+}
+
+.cell-light {
+  background: #eaf6ff;
+}
+
+.cell-selected {
+  outline: 2px solid #ffe082;
+}
+
+.cell-legal {
+  outline: 2px solid #26a69a;
+}
+
+.cell-movable {
+  outline: 2px solid #ff9800;
+}
+
+/* Game-specific styles can be added in each game's CSS file */
