@@ -19,7 +19,7 @@ export const getByGameType: RestAPI<
   { gameType: GameKey }
 > = async (req, res) => {
   const gameType = req.params.gameType;
-  if (!["nim", "guess"].includes(gameType)) {
+  if (!["nim", "guess", "connect4", "battleship", "checkers"].includes(gameType)) {
     res.status(400).send({ error: "Invalid game type" });
     return;
   }
@@ -46,7 +46,7 @@ export const getUserStats: RestAPI<
   { username: string; gameType: GameKey }
 > = async (req, res) => {
   const { username, gameType } = req.params;
-  if (!["nim", "guess"].includes(gameType)) {
+  if (!["nim", "guess", "connect4", "battleship", "checkers"].includes(gameType)) {
     res.status(400).send({ error: "Invalid game type" });
     return;
   }

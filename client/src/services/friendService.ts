@@ -1,6 +1,7 @@
 import type { APIResponse } from "../util/types.ts";
 import { api, exceptionToErrorMsg } from "./api.ts";
-import type { ErrorMsg, FriendListInfo, FriendRequestInfo, UserAuth } from "@gamenite/shared";
+import type { ErrorMsg, FriendRequestInfo, UserAuth } from "@gamenite/shared";
+import type { FriendListInfo } from "@gamenite/shared/src/friend.types.ts";
 
 const FRIEND_API_URL = `/api/myFriend`;
 

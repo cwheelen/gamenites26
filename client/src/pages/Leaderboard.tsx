@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { getLeaderboard } from "../services/leaderboardService.ts";
-import { api } from "../services/api.ts";
-import type { LeaderboardEntry, GameKey, FriendInfo } from "@gamenite/shared";
+import { getFriendList } from "../services/friendService.ts";
+import type { LeaderboardEntry, GameKey, FriendRequestInfo } from "@gamenite/shared";
 import { gameNames } from "../util/consts.ts";
 import UserLink from "../components/UserLink.tsx";
 import { useNavigate } from "react-router-dom";
@@ -22,7 +22,7 @@ export default function Leaderboard() {
   >(null);
   const [selectedGame, setSelectedGame] = useState<GameKey>("nim");
   const [friendsOnly, setFriendsOnly] = useState(false);
-  const [friends, setFriends] = useState<FriendInfo[] | null>(null);
+  const [friends, setFriends] = useState<FriendRequestInfo[] | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
   const { user } = useLoginContext();
@@ -38,8 +38,18 @@ export default function Leaderboard() {
     if (friendsOnly) {
       const fetchFriends = async () => {
         try {
-          const response = await api.get<FriendInfo[]>(`/api/friend/list/${user.username}`);
-          setFriends(response.data);
+          const response = await getFriendList(user.username);
+          if (
+            response &&
+            typeof response === "object" &&
+            !Array.isArray(response) &&
+            "friends" in response &&
+            Array.isArray((response as { friends: unknown }).friends)
+          ) {
+            setFriends((response as { friends: FriendRequestInfo[] }).friends);
+          } else {
+            setFriends([]);
+          }
         } catch (error) {
           setFriends([]);
         }
@@ -48,7 +58,7 @@ export default function Leaderboard() {
     }
   }, [friendsOnly, user.username]);
 
-  const gameOptions: GameKey[] = ["nim", "guess"];
+  const gameOptions: GameKey[] = ["nim", "guess", "connect4", "battleship", "checkers"];
 
   const getFilteredLeaderboard = () => {
     if (!leaderboard || "error" in leaderboard) {
@@ -63,11 +73,19 @@ export default function Leaderboard() {
       return null; // Loading state while friends are being fetched
     }
 
-    const friendUsernames = new Set(
-      friends.flatMap((friend) => [friend.users[0].username, friend.users[1].username]),
-    );
+    // Extract the *other* user's username from each FriendRequestInfo
+    const friendUsernamesArr = friends.map((friend) => {
+      if (friend.from.username.toLowerCase() === user.username.toLowerCase()) {
+        return friend.to.username.toLowerCase();
+      } else {
+        return friend.from.username.toLowerCase();
+      }
+    });
+    // Add the current user's username to the set
+    friendUsernamesArr.push(user.username.toLowerCase());
+    const friendUsernames = new Set(friendUsernamesArr);
     const filtered = leaderboard.entries.filter((entry) =>
-      friendUsernames.has(entry.user.username),
+      friendUsernames.has(entry.user.username.toLowerCase()),
     );
 
     return {
@@ -114,7 +132,7 @@ export default function Leaderboard() {
             }}
             style={{ marginRight: "0.5rem" }}
           />
-          Show only friends
+          Show friends only
         </label>
       </div>
 
