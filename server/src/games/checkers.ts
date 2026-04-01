@@ -333,3 +333,12 @@ export const checkersLogic: GameLogic<CheckersState, CheckersView> = {
 };
 
 export const checkersGameService = new GameService<CheckersState, CheckersView>(checkersLogic);
+
+// Bot code
+
+export const CHECKERS_BOT_USER_ID = "__checkers_bot__";
+
+export function getCheckersBotMove(board: CheckersBoard, player: CheckersPlayer): CheckersMove {
+  const moves = getLegalMoves(board, player);
+  return moves[Math.floor(Math.random() * moves.length)];
+}

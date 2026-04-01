@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import {
   type GameInfo,
   type GameKey,
   type TaggedGameView,
   type Connect4State,
+  type CheckersState,
 } from "@gamenite/shared";
 import { createChat } from "./chat.service.ts";
 import { populateSafeUserInfo } from "./user.service.ts";
@@ -11,7 +13,11 @@ import { nimGameService } from "../games/nim.ts";
 import { guessGameService } from "../games/guess.ts";
 import { connect4GameService, getBotMove, BOT_USER_ID } from "../games/connect4.ts";
 import { battleshipGameService } from "../games/battleship.ts";
-import { checkersGameService } from "../games/checkers.ts";
+import {
+  checkersGameService,
+  getCheckersBotMove,
+  CHECKERS_BOT_USER_ID,
+} from "../games/checkers.ts";
 import { type GameViewUpdates, type UserWithId } from "../types.ts";
 import { GameRepo } from "../repository.ts";
 import { updateLeaderboard } from "./leaderboard.service.ts";
@@ -29,9 +35,12 @@ export const gameServices: { [key in GameKey]: GameServicer } = {
 
 // ... rest of file unchanged below this point ...
 
+/** All bot sentinel IDs — none of these have User records */
+const BOT_IDS = new Set([BOT_USER_ID, CHECKERS_BOT_USER_ID]);
+
 /**
  * Expand a stored game.
- * The bot sentinel ID is excluded from the players list sent to clients.
+ * Bot sentinel IDs are excluded from the players list sent to clients.
  */
 async function populateGameInfo(gameId: string): Promise<GameInfo> {
   const game = await GameRepo.get(gameId);
@@ -40,9 +49,8 @@ async function populateGameInfo(gameId: string): Promise<GameInfo> {
     createdBy: await populateSafeUserInfo(game.createdBy),
     chat: game.chat,
     createdAt: new Date(game.createdAt),
-    // ← filter out the bot before populating — it has no User record
     players: await Promise.all(
-      game.players.filter((id) => id !== BOT_USER_ID).map(populateSafeUserInfo),
+      game.players.filter((id) => !BOT_IDS.has(id)).map(populateSafeUserInfo),
     ),
     type: game.type,
     status: !game.state ? "waiting" : game.done ? "done" : "active",
@@ -56,19 +64,26 @@ async function populateGameInfo(gameId: string): Promise<GameInfo> {
  * @param user - Initial player in the game's waiting room
  * @param type - Game key
  * @param createdAt - Creation time for this game
- * @param vsBot - If true (Connect 4 only), add the CPU as player 1 and start immediately
+ * @param vsBot - If true (for supported games), add the CPU as player 1 and start immediately
  * @returns the new game's info object
  */
 export async function createGame(
   user: UserWithId,
   type: GameKey,
   createdAt: Date,
-  vsBot = false, // ← new parameter
+  vsBot = false,
 ): Promise<GameInfo> {
   const chat = await createChat(createdAt);
 
-  // For bot games the players array is [human, bot] from the start
-  const players = vsBot && type === "connect4" ? [user.userId, BOT_USER_ID] : [user.userId];
+  // Determine the bot ID for this game type, if applicable
+  const botId =
+    vsBot && type === "connect4"
+      ? BOT_USER_ID
+      : vsBot && type === "checkers"
+        ? CHECKERS_BOT_USER_ID
+        : null;
+
+  const players = botId ? [user.userId, botId] : [user.userId];
 
   const gameId = await GameRepo.add({
     type,
@@ -80,7 +95,7 @@ export async function createGame(
   });
 
   // Bot games skip the waiting room — initialise state immediately
-  if (vsBot && type === "connect4") {
+  if (botId) {
     const game = await GameRepo.get(gameId);
     const { state } = gameServices[type].create(players);
     game.state = state;
@@ -190,18 +205,18 @@ export async function updateGame(
   game.done = game.done || result.done;
   await GameRepo.set(gameId, game);
 
-  // Update leaderboard if the game just finished (skip the bot sentinel)
+  // Update leaderboard if the game just finished (skip all bot sentinels)
   if (!wasDone && game.done) {
     const winners = gameServices[game.type].getWinners(game.state);
     for (let i = 0; i < game.players.length; i++) {
       const playerUserId = game.players[i];
-      if (playerUserId === BOT_USER_ID) continue; // ← new: bot has no leaderboard entry
+      if (BOT_IDS.has(playerUserId)) continue;
       const won = winners.includes(i);
       await updateLeaderboard(playerUserId, game.type, won);
     }
   }
 
-  // Bot code
+  // Connect 4 bot
   if (
     !game.done &&
     game.type === "connect4" &&
@@ -216,17 +231,47 @@ export async function updateGame(
       game.done = game.done || botResult.done;
       await GameRepo.set(gameId, game);
 
-      // Update leaderboard if the bot's move ended the game
       if (!wasDone && game.done) {
         const winners = gameServices[game.type].getWinners(game.state);
         for (let i = 0; i < game.players.length; i++) {
           const playerUserId = game.players[i];
-          if (playerUserId === BOT_USER_ID) continue;
+          if (BOT_IDS.has(playerUserId)) continue;
           await updateLeaderboard(playerUserId, game.type, winners.includes(i));
         }
       }
 
-      // Return the bot's views
+      return {
+        views: botResult.views,
+        moveDescription: result.moveDescription,
+        chatId: game.chat,
+      };
+    }
+  }
+
+  // Checkers bot
+  if (
+    !game.done &&
+    game.type === "checkers" &&
+    game.players[(result.state as CheckersState).nextPlayer] === CHECKERS_BOT_USER_ID
+  ) {
+    const botIndex = (result.state as CheckersState).nextPlayer;
+    const botMove = getCheckersBotMove((result.state as CheckersState).board, botIndex);
+    const botResult = gameServices["checkers"].update(game.state, botMove, botIndex, game.players);
+
+    if (botResult) {
+      game.state = botResult.state;
+      game.done = game.done || botResult.done;
+      await GameRepo.set(gameId, game);
+
+      if (!wasDone && game.done) {
+        const winners = gameServices[game.type].getWinners(game.state);
+        for (let i = 0; i < game.players.length; i++) {
+          const playerUserId = game.players[i];
+          if (BOT_IDS.has(playerUserId)) continue;
+          await updateLeaderboard(playerUserId, game.type, winners.includes(i));
+        }
+      }
+
       return {
         views: botResult.views,
         moveDescription: result.moveDescription,
@@ -257,7 +302,7 @@ export async function viewGame(gameId: string, user: UserWithId) {
     isPlayer: playerIndex >= 0,
     view,
     players: await Promise.all(
-      game.players.filter((id) => id !== BOT_USER_ID).map(populateSafeUserInfo),
+      game.players.filter((id) => !BOT_IDS.has(id)).map(populateSafeUserInfo),
     ),
   };
 }

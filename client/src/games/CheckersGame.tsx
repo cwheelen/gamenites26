@@ -5,6 +5,8 @@ import "./BoardGame.css";
 import "./CheckersGame.css";
 
 function playerDisplay(index: number, players: { display: string }[], userPlayerIndex: number) {
+  // bot
+  if (index === 1 && players.length === 1) return "Bot 🤖";
   return index === userPlayerIndex ? "you" : players[index]?.display || `Player ${index + 1}`;
 }
 
@@ -31,7 +33,6 @@ export default function CheckersGame({
   makeMove,
 }: GameProps<CheckersView, CheckersMove>) {
   const [selected, setSelected] = useState<{ row: number; col: number } | null>(null);
-  // Removed unused moveSteps state
 
   const isMyTurn = userPlayerIndex === view.nextPlayer;
 
@@ -77,25 +78,25 @@ export default function CheckersGame({
     });
   }
 
+  function statusMessage() {
+    if (view.winner !== null) {
+      if (view.isDraw) return "It's a draw!";
+      return view.winner === userPlayerIndex
+        ? "You win!"
+        : `${playerDisplay(view.winner, players, userPlayerIndex)} wins!`;
+    }
+    if (userPlayerIndex < 0)
+      return `Watching — ${playerDisplay(view.nextPlayer, players, userPlayerIndex)}'s turn`;
+    return isMyTurn
+      ? "Your turn — select a piece"
+      : `Waiting for ${playerDisplay(view.nextPlayer, players, userPlayerIndex)}…`;
+  }
+
   return (
     <div className="content spacedSection">
       <h2>Checkers</h2>
       <div>
-        {view.winner !== null ? (
-          <b>
-            Game over:{" "}
-            {view.isDraw
-              ? "Draw"
-              : view.winner === userPlayerIndex
-                ? "You win!"
-                : `${playerDisplay(view.winner, players, userPlayerIndex)} wins!`}
-          </b>
-        ) : (
-          <b>
-            Turn: {playerDisplay(view.nextPlayer, players, userPlayerIndex)}
-            {isMyTurn && " (your move)"}
-          </b>
-        )}
+        <b>{statusMessage()}</b>
       </div>
       <div style={{ margin: "1rem 0" }}>
         <table className="board-table">
