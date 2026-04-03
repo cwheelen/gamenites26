@@ -10,17 +10,50 @@ function makeKey(userId: string, gameType: GameKey): string {
   return `${userId}:${gameType}`;
 }
 
+export type TimeRange = "overall" | "daily" | "weekly" | "monthly";
+
 /**
- * Get leaderboard entries for a specific game type with pagination
+ * Returns the cutoff Date for a given time range.
+ * Records with lastUpdated before this date are excluded.
+ * Returns null for "overall" (no cutoff).
+ */
+function getTimeRangeCutoff(timeRange: TimeRange): Date | null {
+  const now = new Date();
+  switch (timeRange) {
+    case "daily": {
+      const cutoff = new Date(now);
+      cutoff.setDate(cutoff.getDate() - 1);
+      return cutoff;
+    }
+    case "weekly": {
+      const cutoff = new Date(now);
+      cutoff.setDate(cutoff.getDate() - 7);
+      return cutoff;
+    }
+    case "monthly": {
+      const cutoff = new Date(now);
+      cutoff.setMonth(cutoff.getMonth() - 1);
+      return cutoff;
+    }
+    case "overall":
+    default:
+      return null;
+  }
+}
+
+/**
+ * Get leaderboard entries for a specific game type with pagination and time range filter
  * @param gameType - The type of game to get leaderboard for
  * @param page - The page number (1-based)
  * @param limit - The number of entries per page
+ * @param timeRange - The time range to filter by (overall, daily, weekly, monthly)
  * @returns Object containing paginated leaderboard entries and metadata
  */
 export async function getLeaderboard(
   gameType: GameKey,
   page: number = 1,
   limit: number = 10,
+  timeRange: TimeRange = "overall",
 ): Promise<{
   entries: LeaderboardEntry[];
   total: number;
@@ -31,8 +64,15 @@ export async function getLeaderboard(
   const allKeys = await LeaderboardRepo.getAllKeys();
   const gameKeys = allKeys.filter((key) => key.endsWith(`:${gameType}`));
   const records = await Promise.all(gameKeys.map((key) => LeaderboardRepo.get(key)));
+
+  // Apply time range filter
+  const cutoff = getTimeRangeCutoff(timeRange);
+  const filteredRecords = cutoff
+    ? records.filter((record) => new Date(record.lastUpdated) >= cutoff)
+    : records;
+
   const entries = await Promise.all(
-    records.map(async (record) => ({
+    filteredRecords.map(async (record) => ({
       user: await populateSafeUserInfo(record.userId),
       gameType: record.gameType,
       wins: record.wins,
