@@ -16,7 +16,6 @@ import type { GameRecord, ThreadRecord, FriendshipRecord } from "./models.ts";
 import { createChat } from "./services/chat.service.ts";
 import { createUser, updateUser } from "./services/user.service.ts";
 import { createFriendRequest } from "./services/friendRequest.service.ts";
-import { updateLeaderboard } from "./services/leaderboard.service.ts";
 
 /** Reset stored games with example data. */
 async function resetStoredGames() {
