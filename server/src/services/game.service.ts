@@ -5,6 +5,7 @@ import {
   type TaggedGameView,
   type Connect4State,
   type CheckersState,
+  type BattleshipState,
 } from "@gamenite/shared";
 import { createChat } from "./chat.service.ts";
 import { populateSafeUserInfo } from "./user.service.ts";
@@ -12,7 +13,12 @@ import { type GameServicer } from "../games/gameServiceManager.ts";
 import { nimGameService } from "../games/nim.ts";
 import { guessGameService } from "../games/guess.ts";
 import { connect4GameService, getBotMove, BOT_USER_ID } from "../games/connect4.ts";
-import { battleshipGameService } from "../games/battleship.ts";
+import {
+  battleshipGameService,
+  getBattleshipBotPlacement,
+  getBattleshipBotShot,
+  BATTLESHIP_BOT_USER_ID,
+} from "../games/battleship.ts";
 import {
   checkersGameService,
   getCheckersBotMove,
@@ -22,9 +28,6 @@ import { type GameViewUpdates, type UserWithId } from "../types.ts";
 import { GameRepo } from "../repository.ts";
 import { updateLeaderboard } from "./leaderboard.service.ts";
 
-/**
- * The service interface for individual games
- */
 export const gameServices: { [key in GameKey]: GameServicer } = {
   nim: nimGameService,
   guess: guessGameService,
@@ -33,15 +36,8 @@ export const gameServices: { [key in GameKey]: GameServicer } = {
   checkers: checkersGameService,
 };
 
-// ... rest of file unchanged below this point ...
+const BOT_IDS = new Set([BOT_USER_ID, CHECKERS_BOT_USER_ID, BATTLESHIP_BOT_USER_ID]);
 
-/** All bot sentinel IDs — none of these have User records */
-const BOT_IDS = new Set([BOT_USER_ID, CHECKERS_BOT_USER_ID]);
-
-/**
- * Expand a stored game.
- * Bot sentinel IDs are excluded from the players list sent to clients.
- */
 async function populateGameInfo(gameId: string): Promise<GameInfo> {
   const game = await GameRepo.get(gameId);
   return {
@@ -58,15 +54,6 @@ async function populateGameInfo(gameId: string): Promise<GameInfo> {
   };
 }
 
-/**
- * Create and store a new game.
- *
- * @param user - Initial player in the game's waiting room
- * @param type - Game key
- * @param createdAt - Creation time for this game
- * @param vsBot - If true (for supported games), add the CPU as player 1 and start immediately
- * @returns the new game's info object
- */
 export async function createGame(
   user: UserWithId,
   type: GameKey,
@@ -75,13 +62,14 @@ export async function createGame(
 ): Promise<GameInfo> {
   const chat = await createChat(createdAt);
 
-  // Determine the bot ID for this game type, if applicable
   const botId =
     vsBot && type === "connect4"
       ? BOT_USER_ID
       : vsBot && type === "checkers"
         ? CHECKERS_BOT_USER_ID
-        : null;
+        : vsBot && type === "battleship"
+          ? BATTLESHIP_BOT_USER_ID
+          : null;
 
   const players = botId ? [user.userId, botId] : [user.userId];
 
@@ -94,7 +82,6 @@ export async function createGame(
     players,
   });
 
-  // Bot games skip the waiting room — initialise state immediately
   if (botId) {
     const game = await GameRepo.get(gameId);
     const { state } = gameServices[type].create(players);
@@ -105,18 +92,12 @@ export async function createGame(
   return populateGameInfo(gameId);
 }
 
-/**
- * Retrieves a single game from the database.
- */
 export async function getGameById(gameId: string): Promise<GameInfo | null> {
   const game = await GameRepo.find(gameId);
   if (!game) return null;
   return populateGameInfo(gameId);
 }
 
-/**
- * Adds a user to a game that hasn't started yet.
- */
 export async function joinGame(gameId: string, user: UserWithId): Promise<GameInfo> {
   const game = await GameRepo.find(gameId);
   if (!game) throw new Error(`user ${user.username} joining invalid game`);
@@ -136,9 +117,6 @@ export async function joinGame(gameId: string, user: UserWithId): Promise<GameIn
   return populateGameInfo(gameId);
 }
 
-/**
- * Initializes a game that hasn't started yet.
- */
 export async function startGame(gameId: string, user: UserWithId): Promise<GameViewUpdates> {
   const game = await GameRepo.find(gameId);
   if (!game) throw new Error(`user ${user.username} starting invalid game`);
@@ -162,9 +140,6 @@ export async function startGame(gameId: string, user: UserWithId): Promise<GameV
   return Promise.resolve(views);
 }
 
-/**
- * Get a list of all games.
- */
 export async function getGames(): Promise<GameInfo[]> {
   const keys = await GameRepo.getAllKeys();
   const unsorted = await Promise.all(keys.map(populateGameInfo));
@@ -177,11 +152,6 @@ export interface GameUpdateResult {
   chatId: string;
 }
 
-/**
- * Updates a game state and returns the necessary view updates.
- * When it's a bot game and the human's move leaves it as the bot's turn,
- * the bot move is computed and applied here before returning.
- */
 export async function updateGame(
   gameId: string,
   user: UserWithId,
@@ -205,7 +175,6 @@ export async function updateGame(
   game.done = game.done || result.done;
   await GameRepo.set(gameId, game);
 
-  // Update leaderboard if the game just finished (skip all bot sentinels)
   if (!wasDone && game.done) {
     const winners = gameServices[game.type].getWinners(game.state);
     for (let i = 0; i < game.players.length; i++) {
@@ -216,7 +185,6 @@ export async function updateGame(
     }
   }
 
-  // Connect 4 bot
   if (
     !game.done &&
     game.type === "connect4" &&
@@ -248,7 +216,6 @@ export async function updateGame(
     }
   }
 
-  // Checkers bot
   if (
     !game.done &&
     game.type === "checkers" &&
@@ -280,6 +247,53 @@ export async function updateGame(
     }
   }
 
+  // bot code
+
+  if (
+    !game.done &&
+    game.type === "battleship" &&
+    game.players[(result.state as BattleshipState).nextPlayer] === BATTLESHIP_BOT_USER_ID
+  ) {
+    const botState = result.state as BattleshipState;
+    const botIndex = botState.nextPlayer;
+
+    let botMove: unknown;
+    if (botState.phase === "placing") {
+      botMove = { type: "place", ships: getBattleshipBotPlacement() };
+    } else {
+      const shot = getBattleshipBotShot(botState, botIndex);
+      botMove = { type: "shoot", ...shot };
+    }
+
+    const botResult = gameServices["battleship"].update(
+      game.state,
+      botMove,
+      botIndex,
+      game.players,
+    );
+
+    if (botResult) {
+      game.state = botResult.state;
+      game.done = game.done || botResult.done;
+      await GameRepo.set(gameId, game);
+
+      if (!wasDone && game.done) {
+        const winners = gameServices[game.type].getWinners(game.state);
+        for (let i = 0; i < game.players.length; i++) {
+          const playerUserId = game.players[i];
+          if (BOT_IDS.has(playerUserId)) continue;
+          await updateLeaderboard(playerUserId, game.type, winners.includes(i));
+        }
+      }
+
+      return {
+        views: botResult.views,
+        moveDescription: result.moveDescription,
+        chatId: game.chat,
+      };
+    }
+  }
+
   return {
     views: result.views,
     moveDescription: result.moveDescription,
@@ -287,9 +301,6 @@ export async function updateGame(
   };
 }
 
-/**
- * View a game as a specific user.
- */
 export async function viewGame(gameId: string, user: UserWithId) {
   const game = await GameRepo.find(gameId);
   if (!game) throw new Error(`user ${user.username} viewed an invalid game id`);
