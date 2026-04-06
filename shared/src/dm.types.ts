@@ -12,6 +12,11 @@ export interface DirectMessageInfo {
   chatId: string;
   userA: string;
   userB: string;
+  lastUpdated: string; // ISO date string
+  lastMessage?: {
+    text: string;
+    createdBy: string; // username of sender
+  };
 }
 
 /*** TYPES USED IN THE DM API ***/

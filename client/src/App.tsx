@@ -22,6 +22,8 @@ import fallback from "./fallback.tsx";
 import NewThread from "./pages/NewThread.tsx";
 import TimeContextKeeper from "./components/UpdatingTimeContext.tsx";
 import Leaderboard from "./pages/Leaderboard.tsx";
+import MessagesList from "./pages/MessagesList.tsx";
+import NewMessage from "./pages/NewMessage.tsx";
 
 /** If `true`, all incoming socket messages will be logged */
 const DEBUG_SOCKETS = false;
@@ -74,6 +76,8 @@ export default function App() {
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/profile/:username" element={<Profile />} />
             <Route path="/friends" element={<FriendsPage />} />
+            <Route path="/dm" element={<MessagesList />} />
+            <Route path="/dm/new" element={<NewMessage />} />
             <Route path="/dm/:username" element={<DirectMessagePage />} />
             <Route path="/*" element={<NoSuchRoute />} />
           </Route>

@@ -13,6 +13,26 @@ function sortedPair(a: string, b: string): [string, string] {
 }
 
 /**
+ * Convert a stored DM record into a DirectMessageInfo object safe for sending to clients.
+ *
+ * @param dmId - The database key for the DM record
+ * @returns A populated DirectMessageInfo object
+ * @throws If either user referenced by the record does not exist
+ */
+async function populateDMInfo(dmId: string): Promise<DirectMessageInfo> {
+  const dm = await DirectMessageRepo.get(dmId);
+  return {
+    dmId,
+    chatId: dm.chatId,
+    userA: dm.userA,
+    userB: dm.userB,
+    lastUpdated: dm.lastUpdated
+      ? new Date(dm.lastUpdated).toISOString()
+      : new Date(dm.createdAt).toISOString(),
+  };
+}
+
+/**
  * Finds an existing DM conversation between two users, or creates one
  * if none exists yet. Returns an error if either user has blocked the other.
  *
@@ -36,7 +56,15 @@ export async function getOrCreateDM(
   for (const key of allKeys) {
     const record = await DirectMessageRepo.get(key);
     if (record.userA === userA && record.userB === userB) {
-      return { dmId: key, chatId: record.chatId, userA, userB };
+      return {
+        dmId: key,
+        chatId: record.chatId,
+        userA,
+        userB,
+        lastUpdated: record.lastUpdated
+          ? new Date(record.lastUpdated).toISOString()
+          : new Date(record.createdAt).toISOString(),
+      };
     }
   }
 
@@ -47,7 +75,25 @@ export async function getOrCreateDM(
     userB,
     chatId: chat.chatId,
     createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString(),
   });
 
-  return { dmId, chatId: chat.chatId, userA, userB };
+  return { dmId, chatId: chat.chatId, userA, userB, lastUpdated: new Date().toISOString() };
+}
+
+export async function getMessages(username: string): Promise<DirectMessageInfo[]> {
+  const keys = await DirectMessageRepo.getAllKeys();
+  const unfiltered = await Promise.all(keys.map(populateDMInfo));
+  const unsorted = unfiltered.filter((dm: DirectMessageInfo) => {
+    return dm.userA === username || dm.userB === username;
+  });
+  return unsorted;
+}
+
+export async function getDMById(dmId: string): Promise<DirectMessageInfo | null> {
+  const dmInfo = await DirectMessageRepo.find(dmId);
+  if (!dmInfo) {
+    return null;
+  }
+  return populateDMInfo(dmId);
 }

@@ -86,7 +86,13 @@ app.use(
         .get("/list/:username", myFriend.getList)
         .get("/status/:usernameA/:usernameB", myFriend.getStatus),
     )
-    .use("/dm", Router().post("/open", dm.postOpen))
+    .use(
+      "/dm",
+      Router()
+        .post("/open", dm.postOpen)
+        .get("/list/:username", dm.getList)
+        .get("/:id", dm.getById),
+    )
     .use(
       "/block",
       Router()

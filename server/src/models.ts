@@ -86,6 +86,7 @@ export interface DirectMessageRecord {
   userB: string; // alphabetically second username
   chatId: RecordId; // References Chat records
   createdAt: DateISO;
+  lastUpdated: DateISO;
 }
 
 /**
