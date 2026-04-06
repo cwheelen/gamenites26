@@ -4,7 +4,7 @@ import { type SafeUserInfo } from "./user.types.ts";
 /**
  * Represents the status of a friend relationship.
  */
-export type FriendStatus = "pending" | "accepted";
+export type FriendStatus = "pending" | "accepted" | "rejected";
 
 /**
  * Represents a friend request or confirmed friendship as exposed to the client.

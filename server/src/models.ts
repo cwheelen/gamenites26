@@ -98,7 +98,7 @@ export interface DirectMessageRecord {
 export interface FriendRecord {
   from: string; // username of sender
   to: string; // username of receiver
-  status: "pending" | "accepted";
+  status: "pending" | "accepted" | "rejected";
   createdAt: DateISO;
 }
 

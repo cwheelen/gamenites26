@@ -122,6 +122,30 @@ export async function acceptFriendRequest(
   return populateFriendRequestInfo(requestId);
 }
 
+export async function rejectFriendRequest(
+  requestId: string,
+  acceptingUsername: string,
+): Promise<FriendRequestInfo | { error: string }> {
+  const record = await FriendRepo.find(requestId);
+
+  if (!record) {
+    return { error: "Friend request not found" };
+  }
+
+  if (record.to !== acceptingUsername) {
+    return { error: "You are not the recipient of this friend request" };
+  }
+
+  if (record.status === "accepted") {
+    return { error: "This friend request has already been accepted" };
+  }
+
+  const data = populateFriendRequestInfo(requestId);
+
+  await FriendRepo.delete(requestId);
+  return data;
+}
+
 /**
  * Retrieves the friends list and pending incoming requests for a given user.
  *

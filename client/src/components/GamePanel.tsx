@@ -81,8 +81,8 @@ export default function GamePanel({
           )
         }
         {
-          // If the game hasn't started and the user has joined but there can be more players added, show a section to invite friends
-          userPlayerIndex >= 0 && !view && players.length < minPlayers && (
+          // If the game hasn't started and the user has joined, show a section to invite friends
+          userPlayerIndex >= 0 && !view && (
             <div className="inviteSection">
               <input
                 type="text"

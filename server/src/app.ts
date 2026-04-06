@@ -81,7 +81,8 @@ app.use(
       "/myFriend",
       Router()
         .post("/request", myFriend.postRequest)
-        .post("/accept", myFriend.postAccept)
+        .put("/accept", myFriend.putAccept)
+        .put("/reject", myFriend.putReject)
         .get("/list/:username", myFriend.getList)
         .get("/status/:usernameA/:usernameB", myFriend.getStatus),
     )
