@@ -1,4 +1,6 @@
+import PaginationControls from "../components/PaginationControls";
 import useNewMessageForm from "../hooks/useNewMessageForm";
+import usePagination from "../hooks/usePagination";
 import "./NewMessage.css";
 
 export default function NewMessage() {
@@ -12,11 +14,15 @@ export default function NewMessage() {
     handleSubmit,
     handleCancel,
     filtered,
-    friendUsername,
     selected,
     groupName,
     setGroupName,
   } = useNewMessageForm();
+
+  const { currentItems, currentPage, totalPages, prevPage, nextPage } = usePagination(
+    filtered || [],
+    5,
+  );
 
   return (
     <div className="content">
@@ -63,25 +69,32 @@ export default function NewMessage() {
             ) : filtered.length === 0 ? (
               <p>{filter ? "No matching friends." : "You have no friends to message."}</p>
             ) : (
-              <div className="friendSelectList">
-                {filtered.map((req) => {
-                  const name = friendUsername(req);
-                  const isSelected = selected.includes(name);
-                  return (
-                    <div
-                      key={req.requestId}
-                      className={`friendSelectItem${isSelected ? " friendSelectItem--selected" : ""}`}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => handleSelect(name)}
-                      onKeyDown={(e) => e.key === "Enter" && handleSelect(name)}
-                    >
-                      {name}
-                      {isSelected && <span className="checkmark"> ✓</span>}
-                    </div>
-                  );
-                })}
-              </div>
+              <>
+                <div className="friendSelectList">
+                  {currentItems.map((name) => {
+                    const isSelected = selected.includes(name);
+                    return (
+                      <div
+                        key={name}
+                        className={`friendSelectItem${isSelected ? " friendSelectItem--selected" : ""}`}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => handleSelect(name)}
+                        onKeyDown={(e) => e.key === "Enter" && handleSelect(name)}
+                      >
+                        {name}
+                        {isSelected && <span className="checkmark"> ✓</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+                <PaginationControls
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onNext={nextPage}
+                  onPrev={prevPage}
+                />
+              </>
             )}
           </>
         )}

@@ -59,6 +59,7 @@ app.use(
         .post("/login", user.postLogin)
         .post("/signup", user.postSignup)
         .post("/:username", user.postByUsername)
+        .get("/public", user.getPublicUsers)
         .get("/:username/status", user.getStatusByUsername)
         .get("/:username", user.getByUsername),
     )

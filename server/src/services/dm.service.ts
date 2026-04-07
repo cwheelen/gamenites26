@@ -2,6 +2,9 @@ import type { DirectMessageInfo } from "@gamenite/shared";
 import { DirectMessageRepo } from "../repository.ts";
 import { createChat } from "./chat.service.ts";
 import { eitherBlocked } from "./block.service.ts";
+import { getUserByUsername } from "./auth.service.ts";
+import { populateSafeUserInfo } from "./user.service.ts";
+import { getFriendshipStatus } from "./friend.service.ts";
 
 /**
  * Returns a stable key for a pair of usernames by sorting them
@@ -47,6 +50,18 @@ export async function getOrCreateDM(
   // Enforce block in both directions before doing anything
   if (await eitherBlocked(usernameA, usernameB)) {
     return { error: "You cannot message this user" };
+  }
+
+  // Enforce privacy: if usernameB only accepts messages from friends, verify friendship
+  const userBAuth = await getUserByUsername(usernameB);
+  if (userBAuth) {
+    const userBInfo = await populateSafeUserInfo(userBAuth.userId);
+    if (userBInfo.privacy === "friends") {
+      const friendship = await getFriendshipStatus(usernameA, usernameB);
+      if (!friendship || friendship.status !== "accepted") {
+        return { error: "This user only accepts messages from friends" };
+      }
+    }
   }
 
   const [userA, userB] = sortedPair(usernameA, usernameB);

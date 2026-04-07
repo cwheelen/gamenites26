@@ -1,6 +1,9 @@
 import { GroupChatRepo } from "../repository.ts";
 import type { GroupChatInfo } from "@gamenite/shared";
 import { createChat } from "./chat.service.ts";
+import { getUserByUsername } from "./auth.service.ts";
+import { populateSafeUserInfo } from "./user.service.ts";
+import { getFriendshipStatus } from "./friend.service.ts";
 
 async function populateGroupChatInfo(groupId: string): Promise<GroupChatInfo> {
   const record = await GroupChatRepo.get(groupId);
@@ -19,7 +22,22 @@ export async function createGroupChat(
   title: string,
   members: string[],
   createdBy: string,
-): Promise<GroupChatInfo> {
+): Promise<GroupChatInfo | { error: string }> {
+  // Enforce privacy: reject if any member only accepts messages from friends and createdBy isn't one
+  for (const member of members) {
+    if (member === createdBy) continue;
+    const memberAuth = await getUserByUsername(member);
+    if (memberAuth) {
+      const memberInfo = await populateSafeUserInfo(memberAuth.userId);
+      if (memberInfo.privacy === "friends") {
+        const friendship = await getFriendshipStatus(createdBy, member);
+        if (!friendship || friendship.status !== "accepted") {
+          return { error: `${member} only accepts messages from friends` };
+        }
+      }
+    }
+  }
+
   const chat = await createChat(new Date());
 
   const id = await GroupChatRepo.add({

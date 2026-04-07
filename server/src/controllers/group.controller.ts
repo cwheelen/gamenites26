@@ -22,7 +22,12 @@ export const postCreateGroupChat: RestAPI<GroupChatInfo> = async (req, res) => {
     return;
   }
 
-  res.send(await createGroupChat(title, members, user.username));
+  const result = await createGroupChat(title, members, user.username);
+  if ("error" in result) {
+    res.status(403).send(result);
+    return;
+  }
+  res.send(result);
 };
 
 export const getList: RestAPI<GroupChatInfo[]> = async (req, res) => {

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { FriendRequestInfo } from "@gamenite/shared";
+import type { FriendRequestInfo, SafeUserInfo } from "@gamenite/shared";
 import useAuth from "./useAuth";
 import useLoginContext from "./useLoginContext";
 import { getFriendList } from "../services/friendService";
 import { openDM } from "../services/dmService";
 import { createGroupChat } from "../services/groupService";
+import { getPublicUsers } from "../services/userService";
 
 export default function useNewMessageForm() {
   const auth = useAuth();
@@ -13,6 +14,7 @@ export default function useNewMessageForm() {
   const navigate = useNavigate();
 
   const [friends, setFriends] = useState<FriendRequestInfo[] | null>(null);
+  const [nonfriends, setNonFriends] = useState<SafeUserInfo[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
   const [openError, setOpenError] = useState<string | null>(null);
@@ -28,6 +30,16 @@ export default function useNewMessageForm() {
       }
     });
   }, [user.username]);
+
+  useEffect(() => {
+    getPublicUsers().then((result) => {
+      if ("error" in result) {
+        setLoadError(result.error);
+      } else {
+        setNonFriends(result.filter((u) => u.username !== user.username));
+      }
+    });
+  }, [user.privacy, user.username]);
 
   const friendUsername = (req: FriendRequestInfo): string => {
     return req.from.username === user.username ? req.to.username : req.from.username;
@@ -75,9 +87,17 @@ export default function useNewMessageForm() {
     navigate("/dm");
   };
 
-  const filtered = friends
-    ? friends.filter((req) => friendUsername(req).toLowerCase().includes(filter.toLowerCase()))
-    : null;
+  const friendUsernames = friends ? friends.map(friendUsername) : [];
+  const nonfriendUsernames = nonfriends
+    ? nonfriends.map((u) => u.username).filter((name) => !friendUsernames.includes(name))
+    : [];
+
+  const allTargets = [...friendUsernames, ...nonfriendUsernames];
+
+  const filtered =
+    friends === null && nonfriends === null
+      ? null
+      : allTargets.filter((name) => name.toLowerCase().includes(filter.toLowerCase()));
 
   return {
     loadError,
@@ -89,7 +109,6 @@ export default function useNewMessageForm() {
     handleRemove,
     handleSubmit,
     filtered,
-    friendUsername,
     selected,
     groupName,
     setGroupName,

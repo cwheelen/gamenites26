@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import ChatPanel from "../components/ChatPanel.tsx";
 import type { GroupChatInfo } from "@gamenite/shared";
 import { getGroupChatById, updateGroupChat } from "../services/groupService.ts";
@@ -19,6 +19,8 @@ export default function GroupChatPage() {
   const [editMembers, setEditMembers] = useState<string[]>([]);
   const [newMember, setNewMember] = useState("");
   const [saveErr, setSaveErr] = useState<string | null>(null);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!groupId) return;
@@ -57,6 +59,24 @@ export default function GroupChatPage() {
   function removeMember(username: string) {
     setEditMembers((prev) => prev.filter((m) => m !== username));
   }
+
+  const handleLeaveGroup = async () => {
+    if (!group || !groupId) return;
+    const remainingMembers = group.members.filter((m) => m !== auth.username);
+    if (remainingMembers.length === 0) {
+      setErr(
+        "You cannot leave the group because you are the last member. Please delete the group instead.",
+      );
+      return;
+    }
+    const result = await updateGroupChat(auth, groupId, undefined, remainingMembers);
+    if ("error" in result) {
+      setErr(result.error);
+    } else {
+      // Successfully left the group, now redirect to messages list
+      navigate("/messages");
+    }
+  };
 
   function addMember() {
     const trimmed = newMember.trim();
@@ -136,13 +156,18 @@ export default function GroupChatPage() {
               <h2 style={{ margin: 0 }}>{group.title}</h2>
               <p style={{ margin: 0 }}>{group.members.join(", ")}</p>
             </div>
-            <button
-              className="narrow"
-              disabled={group.createdBy !== auth.username}
-              onClick={startEditing}
-            >
-              Edit
-            </button>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button className="narrow" onClick={handleLeaveGroup}>
+                Leave Group
+              </button>
+              <button
+                className="narrow"
+                disabled={group.createdBy !== auth.username}
+                onClick={startEditing}
+              >
+                Edit
+              </button>
+            </div>
           </div>
         )}
       </div>

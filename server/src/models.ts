@@ -182,11 +182,13 @@ export interface ThreadRecord {
  * Represents a user document in the database.
  * - `password`: user's password
  * - `display`: A display name
+ * - `privacy`: the user's privacy setting
  * - `createdAt`: when this user registered.
  */
 export interface UserRecord {
   username: string; // References Auth records
   display: string;
+  privacy: "public" | "friends";
   createdAt: DateISO;
   lastOnline: DateISO;
 }

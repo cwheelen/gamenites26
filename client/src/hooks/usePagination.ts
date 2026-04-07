@@ -11,7 +11,7 @@ export interface UsePaginationResult<T> {
 
 export default function usePagination<T>(items: T[], pageSize: number) {
   const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = Math.ceil(items.length / pageSize);
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
   const safePage = Math.min(currentPage, totalPages);
   const startIndex = (safePage - 1) * pageSize;
   const currentItems = items.slice(startIndex, startIndex + pageSize);

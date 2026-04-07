@@ -18,7 +18,7 @@ export default function PaginationControls({
       <button className="primary narrow" onClick={onPrev} disabled={currentPage === 1}>
         Previous
       </button>
-      <span className="paginationControls_label">
+      <span className="paginationControls__label">
         Page {currentPage} of {totalPages}
       </span>
       <button className="primary narrow" onClick={onNext} disabled={currentPage === totalPages}>
