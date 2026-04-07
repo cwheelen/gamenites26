@@ -10,6 +10,8 @@ import {
 import type { FriendListInfo, FriendRequestInfo } from "@gamenite/shared";
 import "./FriendsPage.css";
 import OnlineIndicator from "../components/OnlineIndicator.tsx";
+import usePagination from "../hooks/usePagination.ts";
+import PaginationControls from "../components/PaginationControls.tsx";
 
 export default function FriendsPage() {
   const { user } = useLoginContext();
@@ -18,6 +20,9 @@ export default function FriendsPage() {
   const [err, setErr] = useState<string | null>(null);
   const [accepting, setAccepting] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<string | null>(null);
+
+  const friendList = friendData ? friendData.friends : [];
+  const friendPagination = usePagination(friendList, 10);
 
   useEffect(() => {
     getFriendList(user.username).then((result) => {
@@ -131,23 +136,31 @@ export default function FriendsPage() {
             No friends yet. Visit someone&apos;s profile to send them a request!
           </p>
         ) : (
-          <ul className="dottedList" role="list">
-            {friendData.friends.map((req: FriendRequestInfo) => {
-              // Show the other person, not ourselves
-              const other = req.from.username === user.username ? req.to : req.from;
-              return (
-                <li key={req.requestId} className="friendListItem">
-                  <div className="friendListItem__info">
-                    <Link to={`/profile/${other.username}`} className="friendListItem__name">
-                      {other.display}
-                    </Link>
-                    <OnlineIndicator username={other.username} />
-                    <span className="smallAndGray">@{other.username}</span>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          <>
+            <ul className="dottedList" role="list">
+              {friendPagination.currentItems.map((req: FriendRequestInfo) => {
+                // Show the other person, not ourselves
+                const other = req.from.username === user.username ? req.to : req.from;
+                return (
+                  <li key={req.requestId} className="friendListItem">
+                    <div className="friendListItem__info">
+                      <Link to={`/profile/${other.username}`} className="friendListItem__name">
+                        {other.display}
+                      </Link>
+                      <OnlineIndicator username={other.username} />
+                      <span className="smallAndGray">@{other.username}</span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            <PaginationControls
+              currentPage={friendPagination.currentPage}
+              totalPages={friendPagination.totalPages}
+              onNext={friendPagination.nextPage}
+              onPrev={friendPagination.prevPage}
+            />
+          </>
         )}
       </div>
     </div>
