@@ -5,6 +5,7 @@ import useAuth from "./useAuth";
 import useLoginContext from "./useLoginContext";
 import { getFriendList } from "../services/friendService";
 import { openDM } from "../services/dmService";
+import { createGroupChat } from "../services/groupService";
 
 export default function useNewMessageForm() {
   const auth = useAuth();
@@ -15,6 +16,8 @@ export default function useNewMessageForm() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
   const [openError, setOpenError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [groupName, setGroupName] = useState("");
 
   useEffect(() => {
     getFriendList(user.username).then((result) => {
@@ -26,27 +29,51 @@ export default function useNewMessageForm() {
     });
   }, [user.username]);
 
-  function friendUsername(req: FriendRequestInfo): string {
+  const friendUsername = (req: FriendRequestInfo): string => {
     return req.from.username === user.username ? req.to.username : req.from.username;
-  }
+  };
 
-  function handleInput(e: React.ChangeEvent<HTMLInputElement>) {
+  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilter(e.target.value);
-  }
+  };
 
-  async function handleSelect(username: string) {
-    setOpenError(null);
-    const result = await openDM(auth, username);
-    if ("error" in result) {
-      setOpenError(result.error);
+  const handleSelect = (username: string) => {
+    setSelected((prev) =>
+      prev.includes(username) ? prev.filter((u) => u !== username) : [...prev, username],
+    );
+  };
+
+  const handleRemove = (username: string) => {
+    setSelected(selected.filter((u) => u !== username));
+  };
+
+  const handleSubmit = () => {
+    if (selected.length === 0) {
+      setOpenError("Please select at least one friend to message.");
+    } else if (selected.length === 1) {
+      openDM(auth, selected[0]).then((result) => {
+        if ("error" in result) {
+          setOpenError(result.error);
+        } else {
+          navigate(`/dm/${selected[0]}`);
+        }
+      });
     } else {
-      navigate(`/dm/${username}`);
+      createGroupChat(auth, groupName.trim() || "Group Chat", [...selected, user.username]).then(
+        (result) => {
+          if ("error" in result) {
+            setOpenError(result.error);
+          } else {
+            navigate(`/dm/group/${result.groupId}`);
+          }
+        },
+      );
     }
-  }
+  };
 
-  function handleCancel() {
+  const handleCancel = () => {
     navigate("/dm");
-  }
+  };
 
   const filtered = friends
     ? friends.filter((req) => friendUsername(req).toLowerCase().includes(filter.toLowerCase()))
@@ -59,7 +86,12 @@ export default function useNewMessageForm() {
     openError,
     handleSelect,
     handleCancel,
+    handleRemove,
+    handleSubmit,
     filtered,
     friendUsername,
+    selected,
+    groupName,
+    setGroupName,
   };
 }

@@ -8,9 +8,14 @@ export default function NewMessage() {
     handleInput,
     openError,
     handleSelect,
+    handleRemove,
+    handleSubmit,
     handleCancel,
     filtered,
     friendUsername,
+    selected,
+    groupName,
+    setGroupName,
   } = useNewMessageForm();
 
   return (
@@ -21,6 +26,31 @@ export default function NewMessage() {
         {openError && <p className="error-message">{openError}</p>}
         {!loadError && (
           <>
+            {selected.length > 0 && (
+              <div className="selectedChips">
+                {selected.map((username) => (
+                  <span key={username} className="chip">
+                    {username}
+                    <button
+                      className="chipRemove"
+                      onClick={() => handleRemove(username)}
+                      aria-label={`Remove ${username}`}
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            {selected.length >= 2 && (
+              <input
+                className="searchInput"
+                type="text"
+                placeholder="Group name (optional)"
+                value={groupName}
+                onChange={(e) => setGroupName(e.target.value)}
+              />
+            )}
             <input
               className="searchInput"
               type="text"
@@ -36,16 +66,18 @@ export default function NewMessage() {
               <div className="friendSelectList">
                 {filtered.map((req) => {
                   const name = friendUsername(req);
+                  const isSelected = selected.includes(name);
                   return (
                     <div
                       key={req.requestId}
-                      className="friendSelectItem"
+                      className={`friendSelectItem${isSelected ? " friendSelectItem--selected" : ""}`}
                       role="button"
                       tabIndex={0}
                       onClick={() => handleSelect(name)}
                       onKeyDown={(e) => e.key === "Enter" && handleSelect(name)}
                     >
                       {name}
+                      {isSelected && <span className="checkmark"> ✓</span>}
                     </div>
                   );
                 })}
@@ -54,7 +86,14 @@ export default function NewMessage() {
           </>
         )}
         <div className="actions">
-          <button className="primary narrow" onClick={handleCancel}>
+          <button
+            className="primary narrow"
+            onClick={handleSubmit}
+            disabled={selected.length === 0}
+          >
+            Start Chat
+          </button>
+          <button className="narrow" onClick={handleCancel}>
             Cancel
           </button>
         </div>

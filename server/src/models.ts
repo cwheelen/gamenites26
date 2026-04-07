@@ -90,6 +90,20 @@ export interface DirectMessageRecord {
 }
 
 /**
+ * Represents the information about a DM conversation that the server sends to
+ * clients. This is derived from DirectMessageRecord but with some fields
+ * renamed or converted to be more convenient for client use.
+ */
+export interface GroupChatRecord {
+  title: string;
+  members: string[]; // usernames of group members
+  chatId: RecordId; // References Chat records
+  createdBy: string; // username of the user who created the group chat
+  createdAt: DateISO;
+  lastUpdated: DateISO;
+}
+
+/**
  * Represents a friend request or confirmed friendship in the database.
  * - `from`: username of the user who sent the request
  * - `to`: username of the user who received the request
