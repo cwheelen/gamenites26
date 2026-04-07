@@ -56,11 +56,8 @@ export default function useNewGameForm() {
     }
     setErr(null);
 
-    // NOTE: gameMode is available here for when bot logic is implemented.
-    // For now, both modes create a standard game the same way.
-    // When bot support is added, check `gameMode === "bot"` here and call
-    // a different API endpoint or pass the mode along.
-    const game = await createGame(auth, gameKey);
+    // Pass vsBot=true if gameMode is 'bot'
+    const game = await createGame(auth, gameKey, gameMode === "bot");
     if ("error" in game) {
       setErr(game.error);
       return;

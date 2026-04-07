@@ -18,5 +18,5 @@ export const botSupportedGames: Set<GameKey> = new Set([
   "guess",
   "battleship",
   "checkers",
-  // "connect4",  -- uncomment when connect4 is added
+  "connect4",
 ]);

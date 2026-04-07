@@ -85,7 +85,32 @@ export async function createGame(
   if (botId) {
     const game = await GameRepo.get(gameId);
     const { state } = gameServices[type].create(players);
-    game.state = state;
+    // If Battleship, make bot place ships immediately
+    if (type === "battleship") {
+      // Human is always player 0, bot is player 1
+      const botPlacementMove = { type: "place", ships: getBattleshipBotPlacement() };
+      const botResult = gameServices["battleship"].update(state, botPlacementMove, 1, players);
+      if (botResult) {
+        game.state = botResult.state;
+      } else {
+        game.state = state;
+      }
+    } else if (type === "checkers") {
+      // If bot is first, make its move immediately
+      let currState = state;
+      let currDone = false;
+      while ((currState as CheckersState).nextPlayer === 1) {
+        const botMove = getCheckersBotMove((currState as CheckersState).board, 1);
+        const botResult = gameServices["checkers"].update(currState, botMove, 1, players);
+        if (!botResult) break;
+        currState = botResult.state as CheckersState;
+        currDone = botResult.done;
+        if (currDone) break;
+      }
+      game.state = currState;
+    } else {
+      game.state = state;
+    }
     await GameRepo.set(gameId, game);
   }
 
@@ -249,43 +274,53 @@ export async function updateGame(
 
   // bot code
 
-  if (
-    !game.done &&
-    game.type === "battleship" &&
-    game.players[(result.state as BattleshipState).nextPlayer] === BATTLESHIP_BOT_USER_ID
-  ) {
-    const botState = result.state as BattleshipState;
-    const botIndex = botState.nextPlayer;
-
-    let botMove: unknown;
-    if (botState.phase === "placing") {
-      botMove = { type: "place", ships: getBattleshipBotPlacement() };
-    } else {
-      const shot = getBattleshipBotShot(botState, botIndex);
-      botMove = { type: "shoot", ...shot };
-    }
-
-    const botResult = gameServices["battleship"].update(
-      game.state,
-      botMove,
-      botIndex,
-      game.players,
-    );
-
-    if (botResult) {
-      game.state = botResult.state;
-      game.done = game.done || botResult.done;
-      await GameRepo.set(gameId, game);
-
-      if (!wasDone && game.done) {
-        const winners = gameServices[game.type].getWinners(game.state);
-        for (let i = 0; i < game.players.length; i++) {
-          const playerUserId = game.players[i];
-          if (BOT_IDS.has(playerUserId)) continue;
-          await updateLeaderboard(playerUserId, game.type, winners.includes(i));
-        }
+  if (!game.done && game.type === "battleship") {
+    let botPlacementDone = false;
+    let botResult = null;
+    // If bot hasn't placed ships, do so now
+    const state = result.state as BattleshipState;
+    const botIndex = game.players.findIndex((id) => id === BATTLESHIP_BOT_USER_ID);
+    if (botIndex !== -1 && state.phase === "placing" && !state.placementDone[botIndex]) {
+      const botMove = { type: "place", ships: getBattleshipBotPlacement() };
+      botResult = gameServices["battleship"].update(game.state, botMove, botIndex, game.players);
+      if (botResult) {
+        game.state = botResult.state;
+        game.done = game.done || botResult.done;
+        await GameRepo.set(gameId, game);
+        botPlacementDone = true;
       }
-
+    }
+    // If bot's turn to shoot, do so
+    const currState = (botResult ? botResult.state : game.state) as BattleshipState;
+    if (!game.done && currState.phase === "shooting" && currState.nextPlayer === botIndex) {
+      const shot = getBattleshipBotShot(currState, botIndex);
+      const shootMove = { type: "shoot", ...shot };
+      const shootResult = gameServices["battleship"].update(
+        currState,
+        shootMove,
+        botIndex,
+        game.players,
+      );
+      if (shootResult) {
+        game.state = shootResult.state;
+        game.done = game.done || shootResult.done;
+        await GameRepo.set(gameId, game);
+        if (!wasDone && game.done) {
+          const winners = gameServices[game.type].getWinners(game.state);
+          for (let i = 0; i < game.players.length; i++) {
+            const playerUserId = game.players[i];
+            if (BOT_IDS.has(playerUserId)) continue;
+            await updateLeaderboard(playerUserId, game.type, winners.includes(i));
+          }
+        }
+        return {
+          views: shootResult.views,
+          moveDescription: result.moveDescription,
+          chatId: game.chat,
+        };
+      }
+    }
+    if (botPlacementDone && botResult) {
       return {
         views: botResult.views,
         moveDescription: result.moveDescription,
