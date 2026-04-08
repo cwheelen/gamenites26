@@ -4,6 +4,7 @@ import type { ChatMessage } from "../util/types.ts";
 import { useEffect, useRef } from "react";
 import useTimeSince from "../hooks/useTimeSince.ts";
 import UserLink from "./UserLink.tsx";
+import { NUMBER_GUESSER_BOT_USER_IDS } from "@gamenite/shared/src/games/guess.types";
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -24,9 +25,15 @@ export default function MessageList({ messages }: MessageListProps) {
         {messages.map((message) => {
           if ("meta" in message) {
             if (message.meta === "move") {
+              const isBot = NUMBER_GUESSER_BOT_USER_IDS.includes(message.user.username);
+              const isMultiBotMsg = message.moveDescription === "Bot players made guesses";
               return (
                 <div key={message.messageId} className="chatMoveLog">
-                  <UserLink user={message.user} />
+                  {isBot && !isMultiBotMsg ? (
+                    <span>Bot</span>
+                  ) : !isBot ? (
+                    <UserLink user={message.user} />
+                  ) : null}
                   {message.moveDescription}
                 </div>
               );

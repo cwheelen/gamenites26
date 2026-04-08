@@ -1,3 +1,12 @@
+// Bot IDs for multi-bot support (shared between client and server)
+export const NUMBER_GUESSER_BOT_USER_IDS = [
+  "__guess_bot_1__",
+  "__guess_bot_2__",
+  "__guess_bot_3__",
+  "__guess_bot_4__",
+];
+
+export const NUMBER_GUESSER_BOT_USER_ID = NUMBER_GUESSER_BOT_USER_IDS[0];
 import { z, ZodNumber } from "zod";
 
 /**

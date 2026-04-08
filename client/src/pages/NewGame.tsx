@@ -10,6 +10,9 @@ export default function NewGame() {
     handleModeChange,
     err,
     handleSubmit,
+    isGuessBotGame,
+    numBots,
+    handleNumBotsChange,
   } = useNewGameForm();
 
   return (
@@ -50,6 +53,21 @@ export default function NewGame() {
               🤖 vs Bot
             </button>
           </div>
+          {/* Show number of bots selector for Number Guesser bot games */}
+          {isGuessBotGame && (
+            <div style={{ marginTop: 12 }}>
+              <label>
+                Number of bots:
+                <select value={numBots} onChange={handleNumBotsChange} style={{ marginLeft: 8 }}>
+                  {[1, 2, 3, 4].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          )}
         </div>
       )}
 

@@ -20,21 +20,23 @@ export type GameMode = "player" | "bot";
 export default function useNewGameForm() {
   const [gameKey, setGameKey] = useState<GameKey | "">("");
   const [gameMode, setGameMode] = useState<GameMode>("player");
-  // const [vsBot, setVsBot] = useState(false); // ← new
+  const [numBots, setNumBots] = useState(1);
   const [err, setErr] = useState<string | null>(null);
   const auth = useAuth();
   const navigate = useNavigate();
 
   const supportsBotMode = gameKey !== "" && botSupportedGames.has(gameKey);
+  const isGuessBotGame = supportsBotMode && gameKey === "guess" && gameMode === "bot";
 
   const handleInputChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setErr(null);
-    // setVsBot(false);
     const newKey = e.target.value as GameKey | "";
     setGameKey(newKey);
-    // Reset mode to player if the newly selected game doesn't support bots
     if (newKey === "" || !botSupportedGames.has(newKey)) {
       setGameMode("player");
+    }
+    if (newKey !== "guess") {
+      setNumBots(1);
     }
   };
 
@@ -42,10 +44,9 @@ export default function useNewGameForm() {
     setGameMode(mode);
   };
 
-  // // Bot handler
-  // const handleVsBotChange = (e: ChangeEvent<HTMLInputElement>) => {
-  //   setVsBot(e.target.checked);
-  // };
+  const handleNumBotsChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    setNumBots(Math.max(1, Math.min(4, Number(e.target.value))));
+  };
 
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -56,8 +57,12 @@ export default function useNewGameForm() {
     }
     setErr(null);
 
-    // Pass vsBot=true if gameMode is 'bot'
-    const game = await createGame(auth, gameKey, gameMode === "bot");
+    let game;
+    if (isGuessBotGame) {
+      game = await createGame(auth, gameKey, true, numBots);
+    } else {
+      game = await createGame(auth, gameKey, gameMode === "bot");
+    }
     if ("error" in game) {
       setErr(game.error);
       return;
@@ -69,9 +74,12 @@ export default function useNewGameForm() {
     gameKey,
     gameMode,
     supportsBotMode,
+    isGuessBotGame,
+    numBots,
     err,
     handleInputChange,
     handleModeChange,
+    handleNumBotsChange,
     handleSubmit,
   };
 }

@@ -1,6 +1,6 @@
 /* eslint-disable import/no-duplicates */
 import { describe, it, expect } from "vitest";
-import { getBotMove, BOT_USER_ID } from "../../src/games/connect4.ts";
+import { getBotMove, CONNECT_4_BOT_USER_ID } from "../../src/games/connect4.ts";
 import { getCheckersBotMove, CHECKERS_BOT_USER_ID } from "../../src/games/checkers.ts";
 import type { Connect4Token } from "@gamenite/shared";
 import type { CheckersBoard } from "@gamenite/shared";
@@ -59,8 +59,8 @@ describe("getBotMove (Connect 4)", () => {
     expect(Number.isInteger(col)).toBe(true);
   });
 
-  it("BOT_USER_ID is the expected sentinel string", () => {
-    expect(BOT_USER_ID).toBe("__bot__");
+  it("CONNECT_4_BOT_USER_ID is the expected sentinel string", () => {
+    expect(CONNECT_4_BOT_USER_ID).toBe("__connect4_bot__");
   });
 });
 

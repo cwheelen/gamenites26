@@ -73,7 +73,16 @@ export const guessGameService = new GameService<GuessState, GuessView>(guessLogi
 
 // Bot code
 
-export const NUMBER_GUESSER_BOT_USER_ID = "__guess_bot__";
+// Support up to 4 unique bot user IDs for multi-bot games
+export const NUMBER_GUESSER_BOT_USER_IDS = [
+  "__guess_bot_1__",
+  "__guess_bot_2__",
+  "__guess_bot_3__",
+  "__guess_bot_4__",
+];
+
+// For backward compatibility, keep the single-bot ID
+export const NUMBER_GUESSER_BOT_USER_ID = NUMBER_GUESSER_BOT_USER_IDS[0];
 
 export function getGuessBotMove(state: GuessState): number {
   // The bot will guess randomly between 1 and 100, but will never repeat a previous guess

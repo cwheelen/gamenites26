@@ -13,7 +13,7 @@ import { createChat } from "./chat.service.ts";
 import { populateSafeUserInfo } from "./user.service.ts";
 import { type GameServicer } from "../games/gameServiceManager.ts";
 import { getNimBotMove, NIM_BOT_USER_ID, nimGameService } from "../games/nim.ts";
-import { getGuessBotMove, guessGameService, NUMBER_GUESSER_BOT_USER_ID } from "../games/guess.ts";
+import { getGuessBotMove, guessGameService, NUMBER_GUESSER_BOT_USER_IDS } from "../games/guess.ts";
 import { connect4GameService, getBotMove, CONNECT_4_BOT_USER_ID } from "../games/connect4.ts";
 import {
   battleshipGameService,
@@ -43,7 +43,7 @@ const BOT_IDS = new Set([
   CHECKERS_BOT_USER_ID,
   BATTLESHIP_BOT_USER_ID,
   NIM_BOT_USER_ID,
-  NUMBER_GUESSER_BOT_USER_ID,
+  ...NUMBER_GUESSER_BOT_USER_IDS,
 ]);
 
 async function populateGameInfo(gameId: string): Promise<GameInfo> {
@@ -67,34 +67,25 @@ export async function createGame(
   type: GameKey,
   createdAt: Date,
   vsBot: boolean = false,
+  numBots: number = 1,
 ): Promise<GameInfo> {
   const chat = await createChat(createdAt);
 
-  const getBotType = () => {
-    switch (true) {
-      case type === "connect4" && vsBot:
-        return CONNECT_4_BOT_USER_ID;
-        break;
-      case type === "checkers" && vsBot:
-        return CHECKERS_BOT_USER_ID;
-        break;
-
-      case type === "battleship" && vsBot:
-        return BATTLESHIP_BOT_USER_ID;
-        break;
-      case type === "nim" && vsBot:
-        return NIM_BOT_USER_ID;
-      case type === "guess" && vsBot:
-        return NUMBER_GUESSER_BOT_USER_ID;
-
-      default:
-        return null;
+  let players: string[] = [user.userId];
+  if (vsBot) {
+    if (type === "guess") {
+      const botsToAdd = Math.max(1, Math.min(numBots, 4));
+      players = [user.userId, ...NUMBER_GUESSER_BOT_USER_IDS.slice(0, botsToAdd)];
+    } else if (type === "connect4") {
+      players = [user.userId, CONNECT_4_BOT_USER_ID];
+    } else if (type === "checkers") {
+      players = [user.userId, CHECKERS_BOT_USER_ID];
+    } else if (type === "battleship") {
+      players = [user.userId, BATTLESHIP_BOT_USER_ID];
+    } else if (type === "nim") {
+      players = [user.userId, NIM_BOT_USER_ID];
     }
-  };
-
-  const botId = getBotType();
-
-  const players = botId ? [user.userId, botId] : [user.userId];
+  }
 
   const gameId = await GameRepo.add({
     type,
@@ -106,7 +97,9 @@ export async function createGame(
   });
 
   // If vsBot is true, we want to start the game immediately with the bot's move
-  if (botId) {
+
+  // For vsBot games, start immediately
+  if (vsBot) {
     const game = await GameRepo.get(gameId);
     const { state } = gameServices[type].create(players);
     game.state = state;
@@ -387,36 +380,55 @@ export async function updateGame(
     }
   }
 
-  if (!game.done && game.type === "guess" && game.players.includes(NUMBER_GUESSER_BOT_USER_ID)) {
-    const botState = result.state as GuessState;
-    const botIndex = botState.guesses.findIndex((guess) => guess === null);
-    if (botIndex !== -1) {
-      const botMove = getGuessBotMove(botState);
-      const botResult = gameServices["guess"].update(game.state, botMove, botIndex, game.players);
-
-      if (botResult) {
-        game.state = botResult.state;
-        game.done = game.done || botResult.done;
-        await GameRepo.set(gameId, game);
-
-        if (!wasDone && game.done) {
-          const winners = gameServices[game.type].getWinners(game.state);
-          for (let i = 0; i < game.players.length; i++) {
-            const playerUserId = game.players[i];
-            if (BOT_IDS.has(playerUserId)) continue;
-            await updateLeaderboard(playerUserId, game.type, winners.includes(i));
-          }
+  if (!game.done && game.type === "guess") {
+    // For each bot, if it hasn't guessed, make its move
+    let botCount = 0;
+    let botState = result.state as GuessState;
+    let botMoved = false;
+    let lastBotResult = null;
+    for (const botId of NUMBER_GUESSER_BOT_USER_IDS) {
+      const botIndex = game.players.indexOf(botId);
+      if (botIndex !== -1 && botState.guesses[botIndex] === null) {
+        const botMove = getGuessBotMove(botState);
+        const botResult = gameServices["guess"].update(game.state, botMove, botIndex, game.players);
+        if (botResult) {
+          game.state = botResult.state;
+          botState = botResult.state as GuessState;
+          botMoved = true;
+          lastBotResult = botResult;
+          botCount++;
+          game.done = game.done || botResult.done;
         }
-
-        return {
-          views: botResult.views,
-          moveLog: [
-            { moveDescription: result.moveDescription, userId: user.userId },
-            { moveDescription: botResult.moveDescription, userId: NUMBER_GUESSER_BOT_USER_ID },
-          ],
-          chatId: game.chat,
-        };
       }
+    }
+    if (botMoved && lastBotResult) {
+      await GameRepo.set(gameId, game);
+      if (!wasDone && game.done) {
+        const winners = gameServices[game.type].getWinners(game.state);
+        for (let i = 0; i < game.players.length; i++) {
+          const playerUserId = game.players[i];
+          if (BOT_IDS.has(playerUserId)) continue;
+          await updateLeaderboard(playerUserId, game.type, winners.includes(i));
+        }
+      }
+      // If more than one bot moved, emit a single message for all bots
+      const moveLog = [{ moveDescription: result.moveDescription, userId: user.userId }];
+      if (botCount > 1) {
+        moveLog.push({
+          moveDescription: "Bot players made guesses.",
+          userId: NUMBER_GUESSER_BOT_USER_IDS[0],
+        });
+      } else if (botCount === 1 && lastBotResult) {
+        moveLog.push({
+          moveDescription: lastBotResult.moveDescription,
+          userId: NUMBER_GUESSER_BOT_USER_IDS[0],
+        });
+      }
+      return {
+        views: lastBotResult.views,
+        moveLog,
+        chatId: game.chat,
+      };
     }
   }
 

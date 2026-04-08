@@ -12,11 +12,14 @@ export const createGame = async (
   auth: UserAuth,
   gameKey: GameKey,
   vsBot = false,
+  numBots?: number,
 ): APIResponse<GameInfo> => {
   try {
+    const payload: Record<string, unknown> = { gameKey, vsBot };
+    if (typeof numBots === "number") payload.numBots = numBots;
     const res = await api.post<GameInfo | ErrorMsg>(`${GAME_API_URL}/create`, {
       auth,
-      payload: { gameKey, vsBot },
+      payload,
     });
     return res.data;
   } catch (error) {
