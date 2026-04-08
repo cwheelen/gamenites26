@@ -11,7 +11,6 @@ import {
 } from "@gamenite/shared";
 import { type GameLogic } from "./gameLogic.ts";
 import { GameService } from "./gameServiceManager.ts";
-import { coinFlip } from "./util.ts";
 
 // ---- Board helpers ----
 
@@ -243,7 +242,7 @@ export const checkersLogic: GameLogic<CheckersState, CheckersView> = {
 
   start: (_numPlayers) => ({
     board: buildInitialBoard(),
-    nextPlayer: coinFlip() ? 0 : (1 as CheckersPlayer),
+    nextPlayer: 0,
     drawCounter: 0,
     isDraw: false,
     winner: null,

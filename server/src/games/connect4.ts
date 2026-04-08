@@ -116,7 +116,7 @@ export const connect4GameService = new GameService<Connect4State, Connect4View>(
 // This is bot code
 
 /** Sentinel user ID stored in game.players to represent the CPU opponent */
-export const BOT_USER_ID = "__bot__";
+export const CONNECT_4_BOT_USER_ID = "__connect4_bot__";
 
 /**
  * Picks a random non-full column for the bot to play.

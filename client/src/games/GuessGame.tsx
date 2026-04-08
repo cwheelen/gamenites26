@@ -29,13 +29,14 @@ export default function GuessGame({
       if (view.finished) return `You guessed ${guess}`;
       return view.myGuess ? `You guessed ${view.myGuess}` : "You haven't guessed yet";
     }
+    const name = players[index]?.display ?? "Bot";
     if (guess === false) {
-      return `${players[index].display} hasn't guessed yet`;
+      return `${name} hasn't guessed yet`;
     }
     if (guess === true) {
-      return `${players[index].display} has guessed`;
+      return `${name} has guessed`;
     }
-    return `${players[index].display} guessed ${guess}`;
+    return `${name} guessed ${guess}`;
   }
 
   return (

@@ -6,13 +6,15 @@ import {
   type Connect4State,
   type CheckersState,
   type BattleshipState,
+  type NimState,
+  type GuessState,
 } from "@gamenite/shared";
 import { createChat } from "./chat.service.ts";
 import { populateSafeUserInfo } from "./user.service.ts";
 import { type GameServicer } from "../games/gameServiceManager.ts";
-import { nimGameService } from "../games/nim.ts";
-import { guessGameService } from "../games/guess.ts";
-import { connect4GameService, getBotMove, BOT_USER_ID } from "../games/connect4.ts";
+import { getNimBotMove, NIM_BOT_USER_ID, nimGameService } from "../games/nim.ts";
+import { getGuessBotMove, guessGameService, NUMBER_GUESSER_BOT_USER_ID } from "../games/guess.ts";
+import { connect4GameService, getBotMove, CONNECT_4_BOT_USER_ID } from "../games/connect4.ts";
 import {
   battleshipGameService,
   getBattleshipBotPlacement,
@@ -36,7 +38,13 @@ export const gameServices: { [key in GameKey]: GameServicer } = {
   checkers: checkersGameService,
 };
 
-const BOT_IDS = new Set([BOT_USER_ID, CHECKERS_BOT_USER_ID, BATTLESHIP_BOT_USER_ID]);
+const BOT_IDS = new Set([
+  CONNECT_4_BOT_USER_ID,
+  CHECKERS_BOT_USER_ID,
+  BATTLESHIP_BOT_USER_ID,
+  NIM_BOT_USER_ID,
+  NUMBER_GUESSER_BOT_USER_ID,
+]);
 
 async function populateGameInfo(gameId: string): Promise<GameInfo> {
   const game = await GameRepo.get(gameId);
@@ -58,18 +66,33 @@ export async function createGame(
   user: UserWithId,
   type: GameKey,
   createdAt: Date,
-  vsBot = false,
+  vsBot: boolean = false,
 ): Promise<GameInfo> {
   const chat = await createChat(createdAt);
 
-  const botId =
-    vsBot && type === "connect4"
-      ? BOT_USER_ID
-      : vsBot && type === "checkers"
-        ? CHECKERS_BOT_USER_ID
-        : vsBot && type === "battleship"
-          ? BATTLESHIP_BOT_USER_ID
-          : null;
+  const getBotType = () => {
+    switch (true) {
+      case type === "connect4" && vsBot:
+        return CONNECT_4_BOT_USER_ID;
+        break;
+      case type === "checkers" && vsBot:
+        return CHECKERS_BOT_USER_ID;
+        break;
+
+      case type === "battleship" && vsBot:
+        return BATTLESHIP_BOT_USER_ID;
+        break;
+      case type === "nim" && vsBot:
+        return NIM_BOT_USER_ID;
+      case type === "guess" && vsBot:
+        return NUMBER_GUESSER_BOT_USER_ID;
+
+      default:
+        return null;
+    }
+  };
+
+  const botId = getBotType();
 
   const players = botId ? [user.userId, botId] : [user.userId];
 
@@ -82,6 +105,7 @@ export async function createGame(
     players,
   });
 
+  // If vsBot is true, we want to start the game immediately with the bot's move
   if (botId) {
     const game = await GameRepo.get(gameId);
     const { state } = gameServices[type].create(players);
@@ -148,8 +172,13 @@ export async function getGames(): Promise<GameInfo[]> {
 
 export interface GameUpdateResult {
   views: GameViewUpdates;
-  moveDescription: string;
+  moveLog: MoveLogEntry[];
   chatId: string;
+}
+
+export interface MoveLogEntry {
+  moveDescription: string;
+  userId: string;
 }
 
 export async function updateGame(
@@ -188,7 +217,7 @@ export async function updateGame(
   if (
     !game.done &&
     game.type === "connect4" &&
-    game.players[(result.state as Connect4State).nextPlayer] === BOT_USER_ID
+    game.players[(result.state as Connect4State).nextPlayer] === CONNECT_4_BOT_USER_ID
   ) {
     const botIndex = (result.state as Connect4State).nextPlayer;
     const botCol = getBotMove((result.state as Connect4State).board);
@@ -210,7 +239,10 @@ export async function updateGame(
 
       return {
         views: botResult.views,
-        moveDescription: result.moveDescription,
+        moveLog: [
+          { moveDescription: result.moveDescription, userId: user.userId },
+          { moveDescription: botResult.moveDescription, userId: CONNECT_4_BOT_USER_ID },
+        ],
         chatId: game.chat,
       };
     }
@@ -241,7 +273,10 @@ export async function updateGame(
 
       return {
         views: botResult.views,
-        moveDescription: result.moveDescription,
+        moveLog: [
+          { moveDescription: result.moveDescription, userId: user.userId },
+          { moveDescription: botResult.moveDescription, userId: CHECKERS_BOT_USER_ID },
+        ],
         chatId: game.chat,
       };
     }
@@ -249,28 +284,83 @@ export async function updateGame(
 
   // bot code
 
-  if (
-    !game.done &&
-    game.type === "battleship" &&
-    game.players[(result.state as BattleshipState).nextPlayer] === BATTLESHIP_BOT_USER_ID
-  ) {
-    const botState = result.state as BattleshipState;
-    const botIndex = botState.nextPlayer;
+  if (!game.done && game.type === "battleship" && game.players.includes(BATTLESHIP_BOT_USER_ID)) {
+    if ((result.state as BattleshipState).phase === "placing") {
+      // If the bot is placing, we want to place for both players since the bot goes first and the player hasn't placed yet
+      const botMove = { type: "place", ships: getBattleshipBotPlacement() };
+      const botResult = gameServices["battleship"].update(game.state, botMove, 1, game.players);
 
-    let botMove: unknown;
-    if (botState.phase === "placing") {
-      botMove = { type: "place", ships: getBattleshipBotPlacement() };
-    } else {
-      const shot = getBattleshipBotShot(botState, botIndex);
-      botMove = { type: "shoot", ...shot };
+      if (botResult) {
+        game.state = botResult.state;
+        await GameRepo.set(gameId, game);
+
+        return {
+          views: botResult.views,
+          moveLog: [
+            { moveDescription: result.moveDescription, userId: user.userId },
+            { moveDescription: botResult.moveDescription, userId: BATTLESHIP_BOT_USER_ID },
+          ],
+          chatId: game.chat,
+        };
+      }
     }
 
-    const botResult = gameServices["battleship"].update(
-      game.state,
-      botMove,
-      botIndex,
-      game.players,
-    );
+    if (game.players[(result.state as BattleshipState).nextPlayer] === BATTLESHIP_BOT_USER_ID) {
+      const botState = result.state as BattleshipState;
+      const botIndex = botState.nextPlayer;
+
+      let botMove: unknown;
+      if (botState.phase === "placing") {
+        botMove = { type: "place", ships: getBattleshipBotPlacement() };
+      } else {
+        const shot = getBattleshipBotShot(botState, botIndex);
+        botMove = { type: "shoot", ...shot };
+      }
+
+      const botResult = gameServices["battleship"].update(
+        game.state,
+        botMove,
+        botIndex,
+        game.players,
+      );
+
+      if (botResult) {
+        game.state = botResult.state;
+        game.done = game.done || botResult.done;
+        await GameRepo.set(gameId, game);
+
+        if (!wasDone && game.done) {
+          const winners = gameServices[game.type].getWinners(game.state);
+          for (let i = 0; i < game.players.length; i++) {
+            const playerUserId = game.players[i];
+            if (BOT_IDS.has(playerUserId)) continue;
+            await updateLeaderboard(playerUserId, game.type, winners.includes(i));
+          }
+        }
+
+        return {
+          views: botResult.views,
+          moveLog: [
+            { moveDescription: result.moveDescription, userId: user.userId },
+            { moveDescription: botResult.moveDescription, userId: BATTLESHIP_BOT_USER_ID },
+          ],
+          chatId: game.chat,
+        };
+      }
+    }
+  }
+
+  if (
+    !game.done &&
+    game.type === "nim" &&
+    game.players[(result.state as NimState).nextPlayer] === NIM_BOT_USER_ID
+  ) {
+    const botState = result.state as NimState;
+    const botIndex = botState.nextPlayer;
+
+    const botMove = getNimBotMove(botState);
+
+    const botResult = gameServices["nim"].update(game.state, botMove, botIndex, game.players);
 
     if (botResult) {
       game.state = botResult.state;
@@ -288,15 +378,51 @@ export async function updateGame(
 
       return {
         views: botResult.views,
-        moveDescription: result.moveDescription,
+        moveLog: [
+          { moveDescription: result.moveDescription, userId: user.userId },
+          { moveDescription: botResult.moveDescription, userId: NIM_BOT_USER_ID },
+        ],
         chatId: game.chat,
       };
     }
   }
 
+  if (!game.done && game.type === "guess" && game.players.includes(NUMBER_GUESSER_BOT_USER_ID)) {
+    const botState = result.state as GuessState;
+    const botIndex = botState.guesses.findIndex((guess) => guess === null);
+    if (botIndex !== -1) {
+      const botMove = getGuessBotMove(botState);
+      const botResult = gameServices["guess"].update(game.state, botMove, botIndex, game.players);
+
+      if (botResult) {
+        game.state = botResult.state;
+        game.done = game.done || botResult.done;
+        await GameRepo.set(gameId, game);
+
+        if (!wasDone && game.done) {
+          const winners = gameServices[game.type].getWinners(game.state);
+          for (let i = 0; i < game.players.length; i++) {
+            const playerUserId = game.players[i];
+            if (BOT_IDS.has(playerUserId)) continue;
+            await updateLeaderboard(playerUserId, game.type, winners.includes(i));
+          }
+        }
+
+        return {
+          views: botResult.views,
+          moveLog: [
+            { moveDescription: result.moveDescription, userId: user.userId },
+            { moveDescription: botResult.moveDescription, userId: NUMBER_GUESSER_BOT_USER_ID },
+          ],
+          chatId: game.chat,
+        };
+      }
+    }
+  }
+
   return {
     views: result.views,
-    moveDescription: result.moveDescription,
+    moveLog: [{ moveDescription: result.moveDescription, userId: user.userId }],
     chatId: game.chat,
   };
 }

@@ -154,12 +154,16 @@ export const socketMakeMove: SocketAPI = (socket, io) => async (body) => {
       return;
     }
 
-    const { views, moveDescription, chatId } = await updateGame(gameId, user, move);
+    const { views, moveLog, chatId } = await updateGame(gameId, user, move);
     sendViewUpdates(io, gameId, views);
 
     const now = new Date();
-    const moveLogPayload = await addMoveLogToChat(chatId, moveDescription, user, now);
-    io.to(chatId).emit("chatMoveLog", moveLogPayload);
+    for (const { moveDescription, userId } of moveLog) {
+      const logUser =
+        userId === user.userId ? user : { userId, username: "Unknown", display: "Unknown" };
+      const moveLogPayload = await addMoveLogToChat(chatId, moveDescription, logUser, now);
+      io.to(chatId).emit("chatMoveLog", moveLogPayload);
+    }
   } catch (err) {
     logSocketError(socket, err);
   }

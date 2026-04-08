@@ -14,7 +14,6 @@ import {
 } from "@gamenite/shared";
 import { type GameLogic } from "./gameLogic.ts";
 import { GameService } from "./gameServiceManager.ts";
-import { coinFlip } from "./util.ts";
 
 function makeGrid<T>(fill: T): T[][] {
   return Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(fill) as T[]);
@@ -109,7 +108,7 @@ export const battleshipLogic: GameLogic<BattleshipState, BattleshipView> = {
 
   start: (_numPlayers) => ({
     phase: "placing",
-    nextPlayer: coinFlip() ? 0 : 1,
+    nextPlayer: 0,
     placementDone: [false, false],
     boards: [
       { ships: [], shotsReceived: makeGrid(false) },

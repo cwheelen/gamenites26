@@ -70,3 +70,17 @@ export const guessLogic: GameLogic<GuessState, GuessView> = {
 };
 
 export const guessGameService = new GameService<GuessState, GuessView>(guessLogic);
+
+// Bot code
+
+export const NUMBER_GUESSER_BOT_USER_ID = "__guess_bot__";
+
+export function getGuessBotMove(state: GuessState): number {
+  // The bot will guess randomly between 1 and 100, but will never repeat a previous guess
+  const previousGuesses = new Set(state.guesses.filter((g): g is number => g !== null));
+  let guess: number;
+  do {
+    guess = Math.round(Math.random() * 100) + 1;
+  } while (previousGuesses.has(guess));
+  return guess;
+}
