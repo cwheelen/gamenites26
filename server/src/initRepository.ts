@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { getUserByUsername } from "./services/auth.service.ts";
 import {
   AuthRepo,
+  BlockRepo,
   ChatRepo,
   CommentRepo,
   FriendRequestRepo,
@@ -246,6 +247,7 @@ async function resetStoredLeaderboard() {
 
 export async function resetEverythingToDefaults() {
   await AuthRepo.clear();
+  await BlockRepo.clear();
   await ChatRepo.clear();
   await CommentRepo.clear();
   await GameRepo.clear();

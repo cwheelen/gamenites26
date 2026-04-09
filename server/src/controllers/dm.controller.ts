@@ -1,6 +1,6 @@
 import { withAuth, zDMOpenPayload, type DirectMessageInfo } from "@gamenite/shared";
 import { checkAuth } from "../services/auth.service.ts";
-import { getOrCreateDM } from "../services/dm.service.ts";
+import { getDMById, getMessages, getOrCreateDM } from "../services/dm.service.ts";
 import type { RestAPI } from "../types.ts";
 
 /**
@@ -30,5 +30,26 @@ export const postOpen: RestAPI<DirectMessageInfo> = async (req, res) => {
   }
 
   const dm = await getOrCreateDM(user.username, body.data.payload.with);
+  res.send(dm);
+};
+
+/**
+ * Handle GET requests to `api/dm/list`
+ */
+export const getList: RestAPI<DirectMessageInfo[]> = async (req, res) => {
+  const username = req.params.username;
+  if (!username) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+  res.send(await getMessages(username));
+};
+
+export const getById: RestAPI<DirectMessageInfo, { id: string }> = async (req, res) => {
+  const dm = await getDMById(req.params.id);
+  if (!dm) {
+    res.status(404).send({ error: "DM not found" });
+    return;
+  }
   res.send(dm);
 };

@@ -26,6 +26,7 @@ describe("GET /api/thread/list", () => {
       createdBy: {
         createdAt: expect.anything(),
         display: "Yāo",
+        privacy: "public",
         username: "user1",
         lastOnline: expect.anything(),
       },
@@ -50,6 +51,7 @@ describe("GET /api/thread/:id", () => {
       createdBy: {
         username: "user1",
         display: "Yāo",
+        privacy: "public",
         createdAt: expect.anything(),
         lastOnline: expect.anything(),
       },
@@ -87,6 +89,7 @@ describe("POST /api/thread/create", () => {
       createdBy: {
         username: "user2",
         display: expect.any(String),
+        privacy: "public",
         createdAt: expect.anything(),
         lastOnline: expect.anything(),
       },
@@ -134,6 +137,7 @@ describe("POST /api/thread/:id/comment", () => {
           display: "Sénior Dos",
           createdAt: expect.anything(),
           lastOnline: expect.anything(),
+          privacy: "public",
         },
       },
     ]);

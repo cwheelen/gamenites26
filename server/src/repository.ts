@@ -14,6 +14,7 @@ import type {
   ThreadRecord,
   UserRecord,
   InviteRecord,
+  GroupChatRecord,
 } from "./models.ts";
 
 export const AuthRepo = createRepo<AuthRecord>("auth");
@@ -30,3 +31,4 @@ export const UserRepo = createRepo<UserRecord>("user");
 export const FriendRequestRepo = createRepo<FriendRequestRecord>("friend_request");
 export const FriendshipRepo = createRepo<FriendshipRecord>("friendship");
 export const InviteRepo = createRepo<InviteRecord>("invite");
+export const GroupChatRepo = createRepo<GroupChatRecord>("group_chat");

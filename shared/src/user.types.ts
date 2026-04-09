@@ -11,6 +11,7 @@ import { z } from "zod";
 export interface SafeUserInfo {
   username: string;
   display: string;
+  privacy: "public" | "friends";
   createdAt: Date;
   lastOnline: Date;
 }
@@ -24,4 +25,5 @@ export type UserUpdateRequest = z.infer<typeof zUserUpdateRequest>;
 export const zUserUpdateRequest = z.object({
   password: z.string().optional(),
   display: z.string().optional(),
+  privacy: z.enum(["public", "friends"]).optional(),
 });

@@ -159,3 +159,16 @@ hr {
 .userLink:hover {
   text-decoration: underline;
 }
+
+.paginationControls {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: nowrap;
+}
+.paginationControls__label {
+  flex-shrink: 0;
+  white-space: nowrap;
+}

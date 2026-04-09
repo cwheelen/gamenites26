@@ -16,6 +16,7 @@ export async function populateSafeUserInfo(userId: string): Promise<SafeUserInfo
   return Promise.resolve({
     username: record.username,
     display: record.display,
+    privacy: record.privacy ? record.privacy : "public",
     createdAt: new Date(record.createdAt),
     lastOnline: record.lastOnline ? new Date(record.lastOnline) : new Date(record.createdAt),
   });
@@ -41,6 +42,7 @@ export async function createUser(
   const id = await UserRepo.add({
     username,
     createdAt: createdAt.toISOString(),
+    privacy: "public",
     lastOnline: createdAt.toISOString(),
     display: username,
   });
@@ -50,6 +52,7 @@ export async function createUser(
     createdAt,
     lastOnline: createdAt,
     display: username,
+    privacy: "public",
   });
 }
 
@@ -82,13 +85,14 @@ export async function getUsersByUsername(usernames: string[]): Promise<SafeUserI
  */
 export async function updateUser(
   username: string,
-  { display, password }: UserUpdateRequest,
+  { display, password, privacy }: UserUpdateRequest,
 ): Promise<SafeUserInfo> {
   const user = await getUserByUsername(username);
   if (!user) throw new Error(`No user ${username}`);
   if (password !== undefined) await updateAuth(username, password, user.userId);
   const newUser = await UserRepo.get(user.userId);
   if (display !== undefined) newUser.display = display;
+  if (privacy !== undefined) newUser.privacy = privacy;
   await UserRepo.set(user.userId, newUser);
   return populateSafeUserInfo(user.userId);
 }
@@ -104,6 +108,15 @@ export async function getStatus(username: string): Promise<{
   const status = getUserStatus(user.userId);
   const safeUser = await populateSafeUserInfo(user.userId);
   return { status, lastOnline: safeUser.lastOnline };
+}
+
+/**
+ * Returns all users with privacy set to "public".
+ */
+export async function getAllPublicUsers(): Promise<SafeUserInfo[]> {
+  const allKeys = await UserRepo.getAllKeys();
+  const users = await Promise.all(allKeys.map((id) => populateSafeUserInfo(id)));
+  return users.filter((u) => u.privacy === "public");
 }
 
 export async function persistLastOnline(userId: string): Promise<SafeUserInfo> {

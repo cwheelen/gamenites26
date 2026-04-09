@@ -25,6 +25,7 @@ describe("Header component", () => {
           user: {
             username: "username",
             display: "displayname",
+            privacy: "public",
             createdAt: new Date("01-02-2025"),
             lastOnline: new Date("01-02-2025"),
           },
@@ -47,6 +48,7 @@ describe("Header component", () => {
           user: {
             username: "username123",
             display: "displayname",
+            privacy: "public",
             createdAt: new Date("01-02-2025"),
             lastOnline: new Date("01-02-2025"),
           },
@@ -71,6 +73,7 @@ describe("Header component", () => {
           user: {
             username: "username123",
             display: "displayname",
+            privacy: "public",
             createdAt: new Date("01-02-2025"),
             lastOnline: new Date("01-02-2025"),
           },

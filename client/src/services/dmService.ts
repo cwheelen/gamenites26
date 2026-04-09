@@ -18,3 +18,12 @@ export const openDM = async (
     return exceptionToErrorMsg(error);
   }
 };
+
+export const messagesList = async (username: string): APIResponse<DirectMessageInfo[]> => {
+  try {
+    const res = await api.get<DirectMessageInfo[] | ErrorMsg>(`${DM_API_URL}/list/${username}`);
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};
