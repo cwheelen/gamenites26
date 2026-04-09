@@ -43,6 +43,7 @@ describe("POST /api/game/create", () => {
       createdBy: {
         username: "user3",
         display: "Frau Drei",
+        privacy: "public",
         createdAt: expect.anything(),
         lastOnline: expect.anything(),
       },
@@ -52,6 +53,7 @@ describe("POST /api/game/create", () => {
         {
           username: "user3",
           display: "Frau Drei",
+          privacy: "public",
           createdAt: expect.anything(),
           lastOnline: expect.anything(),
         },

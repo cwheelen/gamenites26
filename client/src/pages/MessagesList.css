@@ -1,0 +1,58 @@
+/* Individual conversation row */
+.messageSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.85rem 0.75rem;
+  cursor: pointer;
+  border-top: 1px dashed #000;
+}
+
+.messageSummary:hover {
+  background-color: var(--gray-background);
+}
+
+/* Top row: username on left, timestamp on right */
+.messageSummary__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.messageSummary__name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: cornflowerblue;
+  text-decoration: none;
+}
+
+.messageSummary__name:hover {
+  text-decoration: underline;
+}
+
+/* Bottom row: last message preview */
+.messageSummary__preview {
+  font-size: 0.85rem;
+  color: var(--gray-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.messageSummary__preview--empty {
+  font-style: italic;
+}
+
+.messageSummary__previewSender {
+  font-weight: 500;
+  color: #444;
+}
+
+/* Timestamp */
+.lastActivity {
+  font-size: 0.75rem;
+  color: var(--gray-foreground);
+  white-space: nowrap;
+  flex-shrink: 0;
+}

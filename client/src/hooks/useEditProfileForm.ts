@@ -16,6 +16,7 @@ export default function useEditProfileForm() {
   const { user, reset } = useLoginContext();
   const [display, setDisplay] = useState(user.display);
   const [password, setPassword] = useState("");
+  const [privacy, setPrivacy] = useState<"public" | "friends">(user.privacy ? "public" : "friends");
   const [confirm, setConfirm] = useState("");
   const [err, setErr] = useState<null | string>(null);
   const auth = useAuth();
@@ -54,6 +55,7 @@ export default function useEditProfileForm() {
     const updates: UserUpdateRequest = {};
     if (display !== user.display) updates.display = display;
     if (password !== "") updates.password = password;
+    if (privacy !== user.privacy) updates.privacy = privacy;
     const response = await updateUser(auth, updates);
     if ("error" in response) {
       setErr(response.error);
@@ -69,6 +71,8 @@ export default function useEditProfileForm() {
     setDisplay,
     password,
     setPassword,
+    privacy,
+    setPrivacy,
     confirm,
     setConfirm,
     err,

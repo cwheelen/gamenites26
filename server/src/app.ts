@@ -15,6 +15,7 @@ import * as thread from "./controllers/thread.controller.ts";
 import * as friend from "./controllers/friends.controller.ts";
 import * as myFriend from "./controllers/friend.controller.ts";
 import * as invite from "./controllers/invite.controller.ts";
+import * as group from "./controllers/group.controller.ts";
 import { type GameServer } from "./types.ts";
 import { unregisterAndEmitOffline } from "./services/presence.service.ts";
 
@@ -58,6 +59,7 @@ app.use(
         .post("/login", user.postLogin)
         .post("/signup", user.postSignup)
         .post("/:username", user.postByUsername)
+        .get("/public", user.getPublicUsers)
         .get("/:username/status", user.getStatusByUsername)
         .get("/:username", user.getByUsername),
     )
@@ -81,11 +83,26 @@ app.use(
       "/myFriend",
       Router()
         .post("/request", myFriend.postRequest)
-        .post("/accept", myFriend.postAccept)
+        .put("/accept", myFriend.putAccept)
+        .put("/reject", myFriend.putReject)
         .get("/list/:username", myFriend.getList)
         .get("/status/:usernameA/:usernameB", myFriend.getStatus),
     )
-    .use("/dm", Router().post("/open", dm.postOpen))
+    .use(
+      "/dm",
+      Router()
+        .post("/open", dm.postOpen)
+        .get("/list/:username", dm.getList)
+        .get("/:id", dm.getById),
+    )
+    .use(
+      "/group",
+      Router()
+        .post("/create", group.postCreateGroupChat)
+        .put("/update", group.putUpdate)
+        .get("/list/:username", group.getList)
+        .get("/:id", group.getById),
+    )
     .use(
       "/block",
       Router()

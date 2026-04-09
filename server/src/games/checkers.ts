@@ -81,7 +81,7 @@ function findJumpChains(piece: CheckersPiece, state: JumpState): { row: number; 
       const midRow = state.row + dr;
       const midCol = state.col + dc;
       const landRow = state.row + 2 * dr;
-      const landCol = state.row + 2 * dc;
+      const landCol = state.col + 2 * dc;
       const midKey = `${midRow},${midCol}`;
 
       if (!inBounds(landRow, landCol)) continue;

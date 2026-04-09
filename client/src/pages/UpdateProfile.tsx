@@ -10,8 +10,18 @@ export default function UpdateProfile() {
   const { user } = useLoginContext();
   const timeSince = useTimeSince();
   const [showPass, setShowPass] = useState(false);
-  const { display, setDisplay, password, setPassword, confirm, setConfirm, err, handleSubmit } =
-    useEditProfileForm();
+  const {
+    display,
+    setDisplay,
+    password,
+    setPassword,
+    privacy,
+    setPrivacy,
+    confirm,
+    setConfirm,
+    err,
+    handleSubmit,
+  } = useEditProfileForm();
   const [selectedGame, setSelectedGame] = useState<GameKey>("nim");
   const [stats, setStats] = useState<{
     [key in GameKey]: LeaderboardEntry | null | { error: string };
@@ -177,6 +187,20 @@ export default function UpdateProfile() {
         </div>
       </div>
       <hr />
+      <div className="spacedSection">
+        <h3>Profile set to {privacy === "public" ? "Public" : "Friends Only"}</h3>
+        <div style={{ display: "flex", flexDirection: "row", gap: "0.5rem" }}>
+          <button
+            className="primary narrow"
+            onClick={(e) => {
+              e.preventDefault();
+              setPrivacy((prev) => (prev === "public" ? "friends" : "public"));
+            }}
+          >
+            Make {privacy === "friends" ? "Public" : "Friends Only"}
+          </button>
+        </div>
+      </div>
       {err && <p className="error-message">{err}</p>}
       <div>
         <button className="primary narrow">Submit</button>

@@ -52,6 +52,9 @@ export default function SideBarNav() {
           {pendingCount}
         </span>
       )}
+      <NavLink to="/dm" className={navClass}>
+        Messages
+      </NavLink>
       <NavLink
         to={`/profile/${username}`}
         id="menu_user"
