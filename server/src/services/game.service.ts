@@ -1,24 +1,35 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import {
   type GameInfo,
   type GameKey,
   type TaggedGameView,
   type Connect4State,
+  type CheckersState,
+  type BattleshipState,
+  type NimState,
+  type GuessState,
 } from "@gamenite/shared";
 import { createChat } from "./chat.service.ts";
 import { populateSafeUserInfo } from "./user.service.ts";
 import { type GameServicer } from "../games/gameServiceManager.ts";
-import { nimGameService } from "../games/nim.ts";
-import { guessGameService } from "../games/guess.ts";
-import { connect4GameService, getBotMove, BOT_USER_ID } from "../games/connect4.ts";
-import { battleshipGameService } from "../games/battleship.ts";
-import { checkersGameService } from "../games/checkers.ts";
+import { getNimBotMove, NIM_BOT_USER_ID, nimGameService } from "../games/nim.ts";
+import { getGuessBotMove, guessGameService, NUMBER_GUESSER_BOT_USER_IDS } from "../games/guess.ts";
+import { connect4GameService, getBotMove, CONNECT_4_BOT_USER_ID } from "../games/connect4.ts";
+import {
+  battleshipGameService,
+  getBattleshipBotPlacement,
+  getBattleshipBotShot,
+  BATTLESHIP_BOT_USER_ID,
+} from "../games/battleship.ts";
+import {
+  checkersGameService,
+  getCheckersBotMove,
+  CHECKERS_BOT_USER_ID,
+} from "../games/checkers.ts";
 import { type GameViewUpdates, type UserWithId } from "../types.ts";
 import { GameRepo } from "../repository.ts";
 import { updateLeaderboard } from "./leaderboard.service.ts";
 
-/**
- * The service interface for individual games
- */
 export const gameServices: { [key in GameKey]: GameServicer } = {
   nim: nimGameService,
   guess: guessGameService,
@@ -27,12 +38,14 @@ export const gameServices: { [key in GameKey]: GameServicer } = {
   checkers: checkersGameService,
 };
 
-// ... rest of file unchanged below this point ...
+const BOT_IDS = new Set([
+  CONNECT_4_BOT_USER_ID,
+  CHECKERS_BOT_USER_ID,
+  BATTLESHIP_BOT_USER_ID,
+  NIM_BOT_USER_ID,
+  ...NUMBER_GUESSER_BOT_USER_IDS,
+]);
 
-/**
- * Expand a stored game.
- * The bot sentinel ID is excluded from the players list sent to clients.
- */
 async function populateGameInfo(gameId: string): Promise<GameInfo> {
   const game = await GameRepo.get(gameId);
   return {
@@ -40,9 +53,8 @@ async function populateGameInfo(gameId: string): Promise<GameInfo> {
     createdBy: await populateSafeUserInfo(game.createdBy),
     chat: game.chat,
     createdAt: new Date(game.createdAt),
-    // ← filter out the bot before populating — it has no User record
     players: await Promise.all(
-      game.players.filter((id) => id !== BOT_USER_ID).map(populateSafeUserInfo),
+      game.players.filter((id) => !BOT_IDS.has(id)).map(populateSafeUserInfo),
     ),
     type: game.type,
     status: !game.state ? "waiting" : game.done ? "done" : "active",
@@ -50,25 +62,30 @@ async function populateGameInfo(gameId: string): Promise<GameInfo> {
   };
 }
 
-/**
- * Create and store a new game.
- *
- * @param user - Initial player in the game's waiting room
- * @param type - Game key
- * @param createdAt - Creation time for this game
- * @param vsBot - If true (Connect 4 only), add the CPU as player 1 and start immediately
- * @returns the new game's info object
- */
 export async function createGame(
   user: UserWithId,
   type: GameKey,
   createdAt: Date,
-  vsBot = false, // ← new parameter
+  vsBot: boolean = false,
+  numBots: number = 1,
 ): Promise<GameInfo> {
   const chat = await createChat(createdAt);
 
-  // For bot games the players array is [human, bot] from the start
-  const players = vsBot && type === "connect4" ? [user.userId, BOT_USER_ID] : [user.userId];
+  let players: string[] = [user.userId];
+  if (vsBot) {
+    if (type === "guess") {
+      const botsToAdd = Math.max(1, Math.min(numBots, 4));
+      players = [user.userId, ...NUMBER_GUESSER_BOT_USER_IDS.slice(0, botsToAdd)];
+    } else if (type === "connect4") {
+      players = [user.userId, CONNECT_4_BOT_USER_ID];
+    } else if (type === "checkers") {
+      players = [user.userId, CHECKERS_BOT_USER_ID];
+    } else if (type === "battleship") {
+      players = [user.userId, BATTLESHIP_BOT_USER_ID];
+    } else if (type === "nim") {
+      players = [user.userId, NIM_BOT_USER_ID];
+    }
+  }
 
   const gameId = await GameRepo.add({
     type,
@@ -79,8 +96,10 @@ export async function createGame(
     players,
   });
 
-  // Bot games skip the waiting room — initialise state immediately
-  if (vsBot && type === "connect4") {
+  // If vsBot is true, we want to start the game immediately with the bot's move
+
+  // For vsBot games, start immediately
+  if (vsBot) {
     const game = await GameRepo.get(gameId);
     const { state } = gameServices[type].create(players);
     game.state = state;
@@ -90,18 +109,12 @@ export async function createGame(
   return populateGameInfo(gameId);
 }
 
-/**
- * Retrieves a single game from the database.
- */
 export async function getGameById(gameId: string): Promise<GameInfo | null> {
   const game = await GameRepo.find(gameId);
   if (!game) return null;
   return populateGameInfo(gameId);
 }
 
-/**
- * Adds a user to a game that hasn't started yet.
- */
 export async function joinGame(gameId: string, user: UserWithId): Promise<GameInfo> {
   const game = await GameRepo.find(gameId);
   if (!game) throw new Error(`user ${user.username} joining invalid game`);
@@ -121,9 +134,6 @@ export async function joinGame(gameId: string, user: UserWithId): Promise<GameIn
   return populateGameInfo(gameId);
 }
 
-/**
- * Initializes a game that hasn't started yet.
- */
 export async function startGame(gameId: string, user: UserWithId): Promise<GameViewUpdates> {
   const game = await GameRepo.find(gameId);
   if (!game) throw new Error(`user ${user.username} starting invalid game`);
@@ -147,9 +157,6 @@ export async function startGame(gameId: string, user: UserWithId): Promise<GameV
   return Promise.resolve(views);
 }
 
-/**
- * Get a list of all games.
- */
 export async function getGames(): Promise<GameInfo[]> {
   const keys = await GameRepo.getAllKeys();
   const unsorted = await Promise.all(keys.map(populateGameInfo));
@@ -158,15 +165,15 @@ export async function getGames(): Promise<GameInfo[]> {
 
 export interface GameUpdateResult {
   views: GameViewUpdates;
-  moveDescription: string;
+  moveLog: MoveLogEntry[];
   chatId: string;
 }
 
-/**
- * Updates a game state and returns the necessary view updates.
- * When it's a bot game and the human's move leaves it as the bot's turn,
- * the bot move is computed and applied here before returning.
- */
+export interface MoveLogEntry {
+  moveDescription: string;
+  userId: string;
+}
+
 export async function updateGame(
   gameId: string,
   user: UserWithId,
@@ -190,22 +197,20 @@ export async function updateGame(
   game.done = game.done || result.done;
   await GameRepo.set(gameId, game);
 
-  // Update leaderboard if the game just finished (skip the bot sentinel)
   if (!wasDone && game.done) {
     const winners = gameServices[game.type].getWinners(game.state);
     for (let i = 0; i < game.players.length; i++) {
       const playerUserId = game.players[i];
-      if (playerUserId === BOT_USER_ID) continue; // ← new: bot has no leaderboard entry
+      if (BOT_IDS.has(playerUserId)) continue;
       const won = winners.includes(i);
       await updateLeaderboard(playerUserId, game.type, won);
     }
   }
 
-  // Bot code
   if (
     !game.done &&
     game.type === "connect4" &&
-    game.players[(result.state as Connect4State).nextPlayer] === BOT_USER_ID
+    game.players[(result.state as Connect4State).nextPlayer] === CONNECT_4_BOT_USER_ID
   ) {
     const botIndex = (result.state as Connect4State).nextPlayer;
     const botCol = getBotMove((result.state as Connect4State).board);
@@ -216,20 +221,212 @@ export async function updateGame(
       game.done = game.done || botResult.done;
       await GameRepo.set(gameId, game);
 
-      // Update leaderboard if the bot's move ended the game
       if (!wasDone && game.done) {
         const winners = gameServices[game.type].getWinners(game.state);
         for (let i = 0; i < game.players.length; i++) {
           const playerUserId = game.players[i];
-          if (playerUserId === BOT_USER_ID) continue;
+          if (BOT_IDS.has(playerUserId)) continue;
           await updateLeaderboard(playerUserId, game.type, winners.includes(i));
         }
       }
 
-      // Return the bot's views
       return {
         views: botResult.views,
-        moveDescription: result.moveDescription,
+        moveLog: [
+          { moveDescription: result.moveDescription, userId: user.userId },
+          { moveDescription: botResult.moveDescription, userId: CONNECT_4_BOT_USER_ID },
+        ],
+        chatId: game.chat,
+      };
+    }
+  }
+
+  if (
+    !game.done &&
+    game.type === "checkers" &&
+    game.players[(result.state as CheckersState).nextPlayer] === CHECKERS_BOT_USER_ID
+  ) {
+    const botIndex = (result.state as CheckersState).nextPlayer;
+    const botMove = getCheckersBotMove((result.state as CheckersState).board, botIndex);
+    const botResult = gameServices["checkers"].update(game.state, botMove, botIndex, game.players);
+
+    if (botResult) {
+      game.state = botResult.state;
+      game.done = game.done || botResult.done;
+      await GameRepo.set(gameId, game);
+
+      if (!wasDone && game.done) {
+        const winners = gameServices[game.type].getWinners(game.state);
+        for (let i = 0; i < game.players.length; i++) {
+          const playerUserId = game.players[i];
+          if (BOT_IDS.has(playerUserId)) continue;
+          await updateLeaderboard(playerUserId, game.type, winners.includes(i));
+        }
+      }
+
+      return {
+        views: botResult.views,
+        moveLog: [
+          { moveDescription: result.moveDescription, userId: user.userId },
+          { moveDescription: botResult.moveDescription, userId: CHECKERS_BOT_USER_ID },
+        ],
+        chatId: game.chat,
+      };
+    }
+  }
+
+  // bot code
+
+  if (!game.done && game.type === "battleship" && game.players.includes(BATTLESHIP_BOT_USER_ID)) {
+    if ((result.state as BattleshipState).phase === "placing") {
+      // If the bot is placing, we want to place for both players since the bot goes first and the player hasn't placed yet
+      const botMove = { type: "place", ships: getBattleshipBotPlacement() };
+      const botResult = gameServices["battleship"].update(game.state, botMove, 1, game.players);
+
+      if (botResult) {
+        game.state = botResult.state;
+        await GameRepo.set(gameId, game);
+
+        return {
+          views: botResult.views,
+          moveLog: [
+            { moveDescription: result.moveDescription, userId: user.userId },
+            { moveDescription: botResult.moveDescription, userId: BATTLESHIP_BOT_USER_ID },
+          ],
+          chatId: game.chat,
+        };
+      }
+    }
+
+    if (game.players[(result.state as BattleshipState).nextPlayer] === BATTLESHIP_BOT_USER_ID) {
+      const botState = result.state as BattleshipState;
+      const botIndex = botState.nextPlayer;
+
+      let botMove: unknown;
+      if (botState.phase === "placing") {
+        botMove = { type: "place", ships: getBattleshipBotPlacement() };
+      } else {
+        const shot = getBattleshipBotShot(botState, botIndex);
+        botMove = { type: "shoot", ...shot };
+      }
+
+      const botResult = gameServices["battleship"].update(
+        game.state,
+        botMove,
+        botIndex,
+        game.players,
+      );
+
+      if (botResult) {
+        game.state = botResult.state;
+        game.done = game.done || botResult.done;
+        await GameRepo.set(gameId, game);
+
+        if (!wasDone && game.done) {
+          const winners = gameServices[game.type].getWinners(game.state);
+          for (let i = 0; i < game.players.length; i++) {
+            const playerUserId = game.players[i];
+            if (BOT_IDS.has(playerUserId)) continue;
+            await updateLeaderboard(playerUserId, game.type, winners.includes(i));
+          }
+        }
+
+        return {
+          views: botResult.views,
+          moveLog: [
+            { moveDescription: result.moveDescription, userId: user.userId },
+            { moveDescription: botResult.moveDescription, userId: BATTLESHIP_BOT_USER_ID },
+          ],
+          chatId: game.chat,
+        };
+      }
+    }
+  }
+
+  if (
+    !game.done &&
+    game.type === "nim" &&
+    game.players[(result.state as NimState).nextPlayer] === NIM_BOT_USER_ID
+  ) {
+    const botState = result.state as NimState;
+    const botIndex = botState.nextPlayer;
+
+    const botMove = getNimBotMove(botState);
+
+    const botResult = gameServices["nim"].update(game.state, botMove, botIndex, game.players);
+
+    if (botResult) {
+      game.state = botResult.state;
+      game.done = game.done || botResult.done;
+      await GameRepo.set(gameId, game);
+
+      if (!wasDone && game.done) {
+        const winners = gameServices[game.type].getWinners(game.state);
+        for (let i = 0; i < game.players.length; i++) {
+          const playerUserId = game.players[i];
+          if (BOT_IDS.has(playerUserId)) continue;
+          await updateLeaderboard(playerUserId, game.type, winners.includes(i));
+        }
+      }
+
+      return {
+        views: botResult.views,
+        moveLog: [
+          { moveDescription: result.moveDescription, userId: user.userId },
+          { moveDescription: botResult.moveDescription, userId: NIM_BOT_USER_ID },
+        ],
+        chatId: game.chat,
+      };
+    }
+  }
+
+  if (!game.done && game.type === "guess") {
+    // For each bot, if it hasn't guessed, make its move
+    let botCount = 0;
+    let botState = result.state as GuessState;
+    let botMoved = false;
+    let lastBotResult = null;
+    for (const botId of NUMBER_GUESSER_BOT_USER_IDS) {
+      const botIndex = game.players.indexOf(botId);
+      if (botIndex !== -1 && botState.guesses[botIndex] === null) {
+        const botMove = getGuessBotMove(botState);
+        const botResult = gameServices["guess"].update(game.state, botMove, botIndex, game.players);
+        if (botResult) {
+          game.state = botResult.state;
+          botState = botResult.state as GuessState;
+          botMoved = true;
+          lastBotResult = botResult;
+          botCount++;
+          game.done = game.done || botResult.done;
+        }
+      }
+    }
+    if (botMoved && lastBotResult) {
+      await GameRepo.set(gameId, game);
+      if (!wasDone && game.done) {
+        const winners = gameServices[game.type].getWinners(game.state);
+        for (let i = 0; i < game.players.length; i++) {
+          const playerUserId = game.players[i];
+          if (BOT_IDS.has(playerUserId)) continue;
+          await updateLeaderboard(playerUserId, game.type, winners.includes(i));
+        }
+      }
+      // If more than one bot moved, emit a single message for all bots
+      const moveLog = [{ moveDescription: result.moveDescription, userId: user.userId }];
+      if (botCount > 1) {
+        moveLog.push({
+          moveDescription: "Bot players made guesses.",
+          userId: NUMBER_GUESSER_BOT_USER_IDS[0],
+        });
+      } else if (botCount === 1 && lastBotResult) {
+        moveLog.push({
+          moveDescription: lastBotResult.moveDescription,
+          userId: NUMBER_GUESSER_BOT_USER_IDS[0],
+        });
+      }
+      return {
+        views: lastBotResult.views,
+        moveLog,
         chatId: game.chat,
       };
     }
@@ -237,14 +434,11 @@ export async function updateGame(
 
   return {
     views: result.views,
-    moveDescription: result.moveDescription,
+    moveLog: [{ moveDescription: result.moveDescription, userId: user.userId }],
     chatId: game.chat,
   };
 }
 
-/**
- * View a game as a specific user.
- */
 export async function viewGame(gameId: string, user: UserWithId) {
   const game = await GameRepo.find(gameId);
   if (!game) throw new Error(`user ${user.username} viewed an invalid game id`);
@@ -257,7 +451,7 @@ export async function viewGame(gameId: string, user: UserWithId) {
     isPlayer: playerIndex >= 0,
     view,
     players: await Promise.all(
-      game.players.filter((id) => id !== BOT_USER_ID).map(populateSafeUserInfo),
+      game.players.filter((id) => !BOT_IDS.has(id)).map(populateSafeUserInfo),
     ),
   };
 }

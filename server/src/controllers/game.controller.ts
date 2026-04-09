@@ -19,6 +19,7 @@ import { isGamePaused } from "./pause.controller.ts";
 const zCreateGamePayload = z.object({
   gameKey: zGameKey,
   vsBot: z.boolean().optional().default(false),
+  numBots: z.number().int().min(1).max(4).optional(),
 });
 
 /**
@@ -34,6 +35,7 @@ export const postCreate: RestAPI<GameInfo> = async (req, res) => {
   const rawPayload = body.data.payload;
   let gameKeyStr: string;
   let vsBot = false;
+  let numBots: number | undefined = undefined;
 
   if (typeof rawPayload === "string") {
     gameKeyStr = rawPayload;
@@ -45,6 +47,7 @@ export const postCreate: RestAPI<GameInfo> = async (req, res) => {
     }
     gameKeyStr = parsed.data.gameKey;
     vsBot = parsed.data.vsBot;
+    numBots = parsed.data.numBots;
   }
 
   const gameKeyParsed = zGameKey.safeParse(gameKeyStr);
@@ -59,6 +62,11 @@ export const postCreate: RestAPI<GameInfo> = async (req, res) => {
     return;
   }
 
+  if (gameKeyParsed.data === "guess" && vsBot) {
+    const game = await createGame(user, gameKeyParsed.data, new Date(), vsBot, numBots ?? 1);
+    res.send(game);
+    return;
+  }
   const game = await createGame(user, gameKeyParsed.data, new Date(), vsBot);
   res.send(game);
 };
@@ -154,12 +162,16 @@ export const socketMakeMove: SocketAPI = (socket, io) => async (body) => {
       return;
     }
 
-    const { views, moveDescription, chatId } = await updateGame(gameId, user, move);
+    const { views, moveLog, chatId } = await updateGame(gameId, user, move);
     sendViewUpdates(io, gameId, views);
 
     const now = new Date();
-    const moveLogPayload = await addMoveLogToChat(chatId, moveDescription, user, now);
-    io.to(chatId).emit("chatMoveLog", moveLogPayload);
+    for (const { moveDescription, userId } of moveLog) {
+      const logUser =
+        userId === user.userId ? user : { userId, username: "Unknown", display: "Unknown" };
+      const moveLogPayload = await addMoveLogToChat(chatId, moveDescription, logUser, now);
+      io.to(chatId).emit("chatMoveLog", moveLogPayload);
+    }
   } catch (err) {
     logSocketError(socket, err);
   }

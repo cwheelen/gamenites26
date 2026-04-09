@@ -17,6 +17,12 @@ import type { GameRecord, ThreadRecord, FriendshipRecord } from "./models.ts";
 import { createChat } from "./services/chat.service.ts";
 import { createUser, updateUser } from "./services/user.service.ts";
 import { createFriendRequest } from "./services/friendRequest.service.ts";
+import { updateLeaderboard } from "./services/leaderboard.service.ts";
+import { CONNECT_4_BOT_USER_ID } from "./games/connect4.ts";
+import { CHECKERS_BOT_USER_ID } from "./games/checkers.ts";
+import { BATTLESHIP_BOT_USER_ID } from "./games/battleship.ts";
+import { NIM_BOT_USER_ID } from "./games/nim.ts";
+import { NUMBER_GUESSER_BOT_USER_ID } from "./games/guess.ts";
 
 /** Reset stored games with example data. */
 async function resetStoredGames() {
@@ -110,6 +116,39 @@ async function resetStoredThreads() {
 /** Reset stored users with example data */
 async function resetStoredUsers() {
   await UserRepo.clear();
+
+  // Seed bot user records so their moves can be logged to chat
+  const botCreatedAt = new Date().toISOString();
+  await UserRepo.set(CONNECT_4_BOT_USER_ID, {
+    username: CONNECT_4_BOT_USER_ID,
+    display: "Connect4 Bot",
+    createdAt: botCreatedAt,
+    lastOnline: botCreatedAt,
+  });
+  await UserRepo.set(CHECKERS_BOT_USER_ID, {
+    username: CHECKERS_BOT_USER_ID,
+    display: "Checkers Bot",
+    createdAt: botCreatedAt,
+    lastOnline: botCreatedAt,
+  });
+  await UserRepo.set(BATTLESHIP_BOT_USER_ID, {
+    username: BATTLESHIP_BOT_USER_ID,
+    display: "Battleship Bot",
+    createdAt: botCreatedAt,
+    lastOnline: botCreatedAt,
+  });
+  await UserRepo.set(NIM_BOT_USER_ID, {
+    username: NIM_BOT_USER_ID,
+    display: "Nim Bot",
+    createdAt: botCreatedAt,
+    lastOnline: botCreatedAt,
+  });
+  await UserRepo.set(NUMBER_GUESSER_BOT_USER_ID, {
+    username: NUMBER_GUESSER_BOT_USER_ID,
+    display: "Guess Bot",
+    createdAt: botCreatedAt,
+    lastOnline: botCreatedAt,
+  });
 
   await createUser("user0", "pwd0000", new Date());
   await createUser("user1", "pwd1111", new Date());

@@ -29,13 +29,25 @@ export default function GuessGame({
       if (view.finished) return `You guessed ${guess}`;
       return view.myGuess ? `You guessed ${view.myGuess}` : "You haven't guessed yet";
     }
+    let name = players[index]?.display;
+    if (!name) {
+      const botCount = view.guesses.length - players.length;
+      if (botCount > 1) {
+        // Label bots if there are multiple bots
+        const botIndex = index - players.length;
+        name = botIndex >= 0 ? `Bot #${botIndex + 1}` : "Bot";
+      } else {
+        // Only one bot: just label as 'Bot'
+        name = "Bot";
+      }
+    }
     if (guess === false) {
-      return `${players[index].display} hasn't guessed yet`;
+      return `${name} hasn't guessed yet`;
     }
     if (guess === true) {
-      return `${players[index].display} has guessed`;
+      return `${name} has guessed`;
     }
-    return `${players[index].display} guessed ${guess}`;
+    return `${name} guessed ${guess}`;
   }
 
   return (

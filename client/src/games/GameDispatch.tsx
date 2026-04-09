@@ -6,6 +6,7 @@ import BattleshipGame from "./BattleshipGame.tsx";
 import { type JSX } from "react";
 import useLoginContext from "../hooks/useLoginContext.ts";
 import useAuth from "../hooks/useAuth.ts";
+import CheckersGame from "./CheckersGame.tsx";
 
 interface GameDispatchProps {
   userPlayerIndex: number;
@@ -42,8 +43,7 @@ export default function GameDispatch({
     case "battleship":
       return <BattleshipGame {...{ ...childProps, view: view.view }} />;
     case "checkers":
-      // CheckersGame UI is pending implementation
-      return <div>Checkers UI coming soon</div>;
+      return <CheckersGame {...{ ...childProps, view: view.view }} />;
     default:
       return assertNever(view);
   }

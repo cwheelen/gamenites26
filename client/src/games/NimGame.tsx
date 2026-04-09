@@ -11,12 +11,16 @@ export default function NimGame({
 
   /** Player's name */
   function playerDisplay(index: number) {
-    return index === userPlayerIndex ? "you" : players[index].display;
+    if (index === userPlayerIndex) return "you";
+    if (index === 1 && players.length === 1) return "Bot";
+    return players[index].display;
   }
 
   /** Possessive form of player's name */
   function playerPoss(index: number) {
-    return index === userPlayerIndex ? "your" : `${players[index].display}'s`;
+    if (index === userPlayerIndex) return "your";
+    if (index === 1 && players.length === 1) return "Bot's";
+    return `${players[index].display}'s`;
   }
 
   return (

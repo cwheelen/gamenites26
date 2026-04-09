@@ -20,30 +20,30 @@ export type GameMode = "player" | "bot";
 export default function useNewGameForm() {
   const [gameKey, setGameKey] = useState<GameKey | "">("");
   const [gameMode, setGameMode] = useState<GameMode>("player");
-  // const [vsBot, setVsBot] = useState(false); // ← new
+  const [numBots, setNumBots] = useState(1);
   const [err, setErr] = useState<string | null>(null);
   const auth = useAuth();
   const navigate = useNavigate();
 
   const supportsBotMode = gameKey !== "" && botSupportedGames.has(gameKey);
+  const isGuessBotGame = supportsBotMode && gameKey === "guess" && gameMode === "bot";
 
   const handleInputChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setErr(null);
-    // setVsBot(false);
     const newKey = e.target.value as GameKey | "";
     setGameKey(newKey);
     // Always reset mode to player when the game selection changes
     setGameMode("player");
+    setNumBots(1);
   };
 
   const handleModeChange = (mode: GameMode) => {
     setGameMode(mode);
   };
 
-  // // Bot handler
-  // const handleVsBotChange = (e: ChangeEvent<HTMLInputElement>) => {
-  //   setVsBot(e.target.checked);
-  // };
+  const handleNumBotsChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    setNumBots(Math.max(1, Math.min(4, Number(e.target.value))));
+  };
 
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -54,11 +54,12 @@ export default function useNewGameForm() {
     }
     setErr(null);
 
-    // NOTE: gameMode is available here for when bot logic is implemented.
-    // For now, both modes create a standard game the same way.
-    // When bot support is added, check `gameMode === "bot"` here and call
-    // a different API endpoint or pass the mode along.
-    const game = await createGame(auth, gameKey);
+    let game;
+    if (isGuessBotGame) {
+      game = await createGame(auth, gameKey, true, numBots);
+    } else {
+      game = await createGame(auth, gameKey, gameMode === "bot");
+    }
     if ("error" in game) {
       setErr(game.error);
       return;
@@ -70,9 +71,12 @@ export default function useNewGameForm() {
     gameKey,
     gameMode,
     supportsBotMode,
+    isGuessBotGame,
+    numBots,
     err,
     handleInputChange,
     handleModeChange,
+    handleNumBotsChange,
     handleSubmit,
   };
 }

@@ -47,3 +47,23 @@ export const nimLogic: GameLogic<NimState, NimView> = {
 };
 
 export const nimGameService = new GameService<NimState, NimView>(nimLogic);
+
+// Bot logic
+
+export const NIM_BOT_USER_ID = "__nim_bot__";
+
+export function getNimBotMoveEasy(state: NimState): number {
+  // Easy bot just takes a random valid number of tokens
+  return Math.floor(Math.random() * Math.min(3, state.remaining)) + 1;
+}
+
+export function getNimBotMove(state: NimState): number {
+  // The winning strategy is to always leave a multiple of 4 for the opponent
+  const remainder = state.remaining % 4;
+  if (remainder === 0) {
+    // If we're already at a multiple of 4, just take 1 token
+    return 1;
+  }
+  // Otherwise, take enough tokens to leave a multiple of 4
+  return remainder;
+}

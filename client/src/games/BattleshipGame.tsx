@@ -1,3 +1,4 @@
+import "./BoardGame.css";
 import "./BattleshipGame.css";
 import type {
   BattleshipView,
@@ -25,7 +26,7 @@ function renderOwnBoard(board: OwnBoardCell[][] | null) {
       </div>
     );
   return (
-    <table className="battleship-board">
+    <table className="board-table">
       <thead>
         <tr>
           <th></th>
