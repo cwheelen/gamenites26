@@ -56,7 +56,7 @@ export default function NewGame() {
       {err && <p className="error-message">{err}</p>}
 
       <div>
-        <button className="primary narrow">
+        <button className="primary narrow" data-testid="submit-game-form">
           {gameMode === "bot" ? "Play vs Bot" : "Create New Game"}
         </button>
       </div>

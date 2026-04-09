@@ -32,10 +32,8 @@ export default function useNewGameForm() {
     // setVsBot(false);
     const newKey = e.target.value as GameKey | "";
     setGameKey(newKey);
-    // Reset mode to player if the newly selected game doesn't support bots
-    if (newKey === "" || !botSupportedGames.has(newKey)) {
-      setGameMode("player");
-    }
+    // Always reset mode to player when the game selection changes
+    setGameMode("player");
   };
 
   const handleModeChange = (mode: GameMode) => {

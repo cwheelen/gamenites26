@@ -33,6 +33,7 @@ test.describe("The game of Number Guesser", () => {
     await expect(page1.getByRole("button", { name: "Submit Guess" })).toBeVisible();
     await expect(page2.getByRole("button", { name: "Submit Guess", exact: true })).toBeVisible();
     await page1.getByRole("button", { name: "Submit Guess", exact: true }).click();
+    await expect(page1.getByText("Waiting for other players...")).toBeVisible();
     await page2.getByRole("button", { name: "Submit Guess", exact: true }).click();
 
     await expect(page1.getByText("Game over!")).toBeVisible();

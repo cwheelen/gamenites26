@@ -75,7 +75,7 @@ export default function GamePanel({
         {
           // If the game hasn't started and the user has joined, they can start the game if a minimum number of players are present
           userPlayerIndex >= 0 && !view && players.length >= minPlayers && (
-            <button className="primary narrow" onClick={startGame}>
+            <button className="primary narrow" data-testid="start-game" onClick={startGame}>
               Start Game
             </button>
           )
