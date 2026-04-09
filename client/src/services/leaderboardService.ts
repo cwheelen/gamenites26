@@ -1,17 +1,21 @@
 import { api, exceptionToErrorMsg } from "./api.ts";
 import type { LeaderboardEntry, GameKey, ErrorMsg } from "@gamenite/shared";
 
+export type TimeRange = "overall" | "daily" | "weekly" | "monthly";
+
 /**
  * Get leaderboard for a specific game type
  * @param gameType - The type of game
  * @param page - The page number (1-based, default 1)
  * @param limit - The number of entries per page (default 10)
+ * @param timeRange - The time range to filter by (default "overall")
  * @returns Promise resolving to leaderboard data with pagination info or error message
  */
 export async function getLeaderboard(
   gameType: GameKey,
   page: number = 1,
   limit: number = 10,
+  timeRange: TimeRange = "overall",
 ): Promise<
   | {
       entries: LeaderboardEntry[];
@@ -32,7 +36,7 @@ export async function getLeaderboard(
           totalPages: number;
         }
       | ErrorMsg
-    >(`/api/leaderboard/${gameType}?page=${page}&limit=${limit}`);
+    >(`/api/leaderboard/${gameType}?page=${page}&limit=${limit}&timeRange=${timeRange}`);
     return response.data;
   } catch (error) {
     return exceptionToErrorMsg(error);

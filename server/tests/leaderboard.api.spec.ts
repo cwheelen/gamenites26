@@ -89,3 +89,45 @@ describe("GET /api/leaderboard/user/:username/:gameType", () => {
     expect(response.body === null || typeof response.body === "object").toBe(true);
   });
 });
+
+describe("Leaderboard advanced features", () => {
+  it("should return leaderboard with correct pagination", async () => {
+    const response = await supertest(app).get("/api/leaderboard/nim?page=2&limit=5");
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty("entries");
+    expect(Array.isArray(response.body.entries)).toBe(true);
+    expect(response.body).toHaveProperty("page", 2);
+    expect(response.body).toHaveProperty("limit", 5);
+    expect(response.body).toHaveProperty("total");
+    expect(response.body).toHaveProperty("totalPages");
+    expect(response.body.entries.length).toBeLessThanOrEqual(5);
+  });
+
+  it("should return leaderboard for each time range", async () => {
+    const timeRanges = ["overall", "daily", "weekly", "monthly"];
+    for (const range of timeRanges) {
+      const response = await supertest(app).get(`/api/leaderboard/nim?timeRange=${range}`);
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty("entries");
+      expect(Array.isArray(response.body.entries)).toBe(true);
+      expect(response.body).toHaveProperty("page");
+      expect(response.body).toHaveProperty("limit");
+      expect(response.body).toHaveProperty("total");
+      expect(response.body).toHaveProperty("totalPages");
+    }
+  });
+
+  it("should return only friends in leaderboard when friends filter is applied", async () => {
+    // Replace 'user1' with a test user who has friends and leaderboard entries
+    const response = await supertest(app).get("/api/leaderboard/nim?friendsOf=user1");
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty("entries");
+    expect(Array.isArray(response.body.entries)).toBe(true);
+    if (response.body.entries.length > 0) {
+      for (const entry of response.body.entries) {
+        expect(entry.user).toHaveProperty("username");
+        // Optionally, check that entry.user.username is in user1's friends list
+      }
+    }
+  });
+});

@@ -17,7 +17,6 @@ import type { GameRecord, ThreadRecord, FriendshipRecord } from "./models.ts";
 import { createChat } from "./services/chat.service.ts";
 import { createUser, updateUser } from "./services/user.service.ts";
 import { createFriendRequest } from "./services/friendRequest.service.ts";
-import { updateLeaderboard } from "./services/leaderboard.service.ts";
 
 /** Reset stored games with example data. */
 async function resetStoredGames() {
@@ -166,6 +165,7 @@ async function resetFriends() {
   );
   await createFriendRequest(user2id, user3id, new Date());
 }
+
 /** Reset stored leaderboard with example data */
 async function resetStoredLeaderboard() {
   const user0id = (await getUserByUsername("user0"))!.userId;
@@ -184,65 +184,77 @@ async function resetStoredLeaderboard() {
   const user13id = (await getUserByUsername("user13"))!.userId;
   const user14id = (await getUserByUsername("user14"))!.userId;
 
-  // Add sample leaderboard entries for Nim with varied win/loss records
-  // user0: 8 wins, 2 losses (80% win rate)
-  for (let i = 0; i < 8; i++) await updateLeaderboard(user0id, "nim", true);
-  for (let i = 0; i < 2; i++) await updateLeaderboard(user0id, "nim", false);
+  const now = new Date().toISOString();
+  const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+  const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+  const fortyDaysAgo = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString();
 
-  // user1: 6 wins, 4 losses (60% win rate)
-  for (let i = 0; i < 6; i++) await updateLeaderboard(user1id, "nim", true);
-  for (let i = 0; i < 4; i++) await updateLeaderboard(user1id, "nim", false);
+  const entries: {
+    userId: string;
+    gameType: "nim" | "guess" | "battleship" | "checkers";
+    wins: number;
+    losses: number;
+    lastUpdated: string;
+  }[] = [
+    // NIM
+    { userId: user5id, gameType: "nim", wins: 9, losses: 1, lastUpdated: now },
+    { userId: user3id, gameType: "nim", wins: 7, losses: 1, lastUpdated: now },
+    { userId: user9id, gameType: "nim", wins: 7, losses: 3, lastUpdated: now },
+    { userId: user0id, gameType: "nim", wins: 8, losses: 2, lastUpdated: twoDaysAgo },
+    { userId: user11id, gameType: "nim", wins: 8, losses: 0, lastUpdated: twoDaysAgo },
+    { userId: user1id, gameType: "nim", wins: 6, losses: 4, lastUpdated: tenDaysAgo },
+    { userId: user7id, gameType: "nim", wins: 6, losses: 2, lastUpdated: tenDaysAgo },
+    { userId: user2id, gameType: "nim", wins: 5, losses: 3, lastUpdated: fortyDaysAgo },
+    { userId: user4id, gameType: "nim", wins: 4, losses: 6, lastUpdated: fortyDaysAgo },
+    { userId: user6id, gameType: "nim", wins: 3, losses: 7, lastUpdated: fortyDaysAgo },
 
-  // user2: 5 wins, 3 losses (62.5% win rate)
-  for (let i = 0; i < 5; i++) await updateLeaderboard(user2id, "nim", true);
-  for (let i = 0; i < 3; i++) await updateLeaderboard(user2id, "nim", false);
+    // GUESS
+    { userId: user2id, gameType: "guess", wins: 8, losses: 2, lastUpdated: now },
+    { userId: user6id, gameType: "guess", wins: 7, losses: 3, lastUpdated: now },
+    { userId: user10id, gameType: "guess", wins: 6, losses: 2, lastUpdated: now },
+    { userId: user4id, gameType: "guess", wins: 5, losses: 5, lastUpdated: twoDaysAgo },
+    { userId: user12id, gameType: "guess", wins: 5, losses: 3, lastUpdated: twoDaysAgo },
+    { userId: user0id, gameType: "guess", wins: 4, losses: 4, lastUpdated: tenDaysAgo },
+    { userId: user8id, gameType: "guess", wins: 3, losses: 5, lastUpdated: fortyDaysAgo },
+    { userId: user14id, gameType: "guess", wins: 2, losses: 6, lastUpdated: fortyDaysAgo },
 
-  // user3: 7 wins, 1 loss (87.5% win rate)
-  for (let i = 0; i < 7; i++) await updateLeaderboard(user3id, "nim", true);
-  await updateLeaderboard(user3id, "nim", false);
+    // BATTLESHIP
+    { userId: user1id, gameType: "battleship", wins: 10, losses: 2, lastUpdated: now },
+    { userId: user7id, gameType: "battleship", wins: 8, losses: 4, lastUpdated: now },
+    { userId: user13id, gameType: "battleship", wins: 7, losses: 3, lastUpdated: now },
+    { userId: user3id, gameType: "battleship", wins: 6, losses: 2, lastUpdated: twoDaysAgo },
+    { userId: user9id, gameType: "battleship", wins: 5, losses: 5, lastUpdated: twoDaysAgo },
+    { userId: user5id, gameType: "battleship", wins: 4, losses: 4, lastUpdated: tenDaysAgo },
+    { userId: user11id, gameType: "battleship", wins: 3, losses: 5, lastUpdated: fortyDaysAgo },
+    { userId: user2id, gameType: "battleship", wins: 2, losses: 6, lastUpdated: fortyDaysAgo },
 
-  // user4: 4 wins, 6 losses (40% win rate)
-  for (let i = 0; i < 4; i++) await updateLeaderboard(user4id, "nim", true);
-  for (let i = 0; i < 6; i++) await updateLeaderboard(user4id, "nim", false);
+    // CHECKERS
+    { userId: user8id, gameType: "checkers", wins: 9, losses: 1, lastUpdated: now },
+    { userId: user14id, gameType: "checkers", wins: 7, losses: 2, lastUpdated: now },
+    { userId: user4id, gameType: "checkers", wins: 6, losses: 3, lastUpdated: now },
+    { userId: user0id, gameType: "checkers", wins: 5, losses: 2, lastUpdated: twoDaysAgo },
+    { userId: user6id, gameType: "checkers", wins: 5, losses: 4, lastUpdated: twoDaysAgo },
+    { userId: user12id, gameType: "checkers", wins: 4, losses: 3, lastUpdated: tenDaysAgo },
+    { userId: user10id, gameType: "checkers", wins: 3, losses: 5, lastUpdated: fortyDaysAgo },
+    { userId: user1id, gameType: "checkers", wins: 2, losses: 7, lastUpdated: fortyDaysAgo },
+  ];
 
-  // user5: 9 wins, 1 loss (90% win rate)
-  for (let i = 0; i < 9; i++) await updateLeaderboard(user5id, "nim", true);
-  await updateLeaderboard(user5id, "nim", false);
+  await LeaderboardRepo.clear();
 
-  // user6: 3 wins, 7 losses (30% win rate)
-  for (let i = 0; i < 3; i++) await updateLeaderboard(user6id, "nim", true);
-  for (let i = 0; i < 7; i++) await updateLeaderboard(user6id, "nim", false);
-
-  // user7: 6 wins, 2 losses (75% win rate)
-  for (let i = 0; i < 6; i++) await updateLeaderboard(user7id, "nim", true);
-  for (let i = 0; i < 2; i++) await updateLeaderboard(user7id, "nim", false);
-
-  // user8: 2 wins, 8 losses (20% win rate)
-  for (let i = 0; i < 2; i++) await updateLeaderboard(user8id, "nim", true);
-  for (let i = 0; i < 8; i++) await updateLeaderboard(user8id, "nim", false);
-
-  // user9: 7 wins, 3 losses (70% win rate)
-  for (let i = 0; i < 7; i++) await updateLeaderboard(user9id, "nim", true);
-  for (let i = 0; i < 3; i++) await updateLeaderboard(user9id, "nim", false);
-
-  // user10: 5 wins, 5 losses (50% win rate)
-  for (let i = 0; i < 5; i++) await updateLeaderboard(user10id, "nim", true);
-  for (let i = 0; i < 5; i++) await updateLeaderboard(user10id, "nim", false);
-
-  // user11: 8 wins, 0 losses (100% win rate)
-  for (let i = 0; i < 8; i++) await updateLeaderboard(user11id, "nim", true);
-
-  // user12: 4 wins, 4 losses (50% win rate)
-  for (let i = 0; i < 4; i++) await updateLeaderboard(user12id, "nim", true);
-  for (let i = 0; i < 4; i++) await updateLeaderboard(user12id, "nim", false);
-
-  // user13: 6 wins, 6 losses (50% win rate)
-  for (let i = 0; i < 6; i++) await updateLeaderboard(user13id, "nim", true);
-  for (let i = 0; i < 6; i++) await updateLeaderboard(user13id, "nim", false);
-
-  // user14: 3 wins, 2 losses (60% win rate)
-  for (let i = 0; i < 3; i++) await updateLeaderboard(user14id, "nim", true);
-  for (let i = 0; i < 2; i++) await updateLeaderboard(user14id, "nim", false);
+  await Promise.all(
+    entries.map(({ userId, gameType, wins, losses, lastUpdated }) =>
+      LeaderboardRepo.set(`${userId}:${gameType}`, {
+        userId,
+        gameType,
+        wins,
+        losses,
+        gamesPlayed: wins + losses,
+        currentStreak: wins > 0 ? 1 : 0,
+        longestStreak: wins,
+        lastUpdated,
+      }),
+    ),
+  );
 }
 
 export async function resetEverythingToDefaults() {

@@ -1,12 +1,18 @@
 import { type LeaderboardEntry, type GameKey } from "@gamenite/shared";
-import { getLeaderboard, getUserLeaderboard } from "../services/leaderboard.service.ts";
+import {
+  getLeaderboard,
+  getUserLeaderboard,
+  type TimeRange,
+} from "../services/leaderboard.service.ts";
 import { type RestAPI } from "../types.ts";
 import { getUserByUsername } from "../services/auth.service.ts";
 
+const VALID_GAME_TYPES = ["nim", "guess", "connect4", "battleship", "checkers"];
+const VALID_TIME_RANGES: TimeRange[] = ["overall", "daily", "weekly", "monthly"];
+
 /**
  * Get leaderboard for a specific game type
- * @param req The request with game type as a parameter
- * @param res The response containing leaderboard entries
+ * Supports query params: page, limit, timeRange
  */
 export const getByGameType: RestAPI<
   {
@@ -19,16 +25,20 @@ export const getByGameType: RestAPI<
   { gameType: GameKey }
 > = async (req, res) => {
   const gameType = req.params.gameType;
-  if (!["nim", "guess"].includes(gameType)) {
+  if (!VALID_GAME_TYPES.includes(gameType)) {
     res.status(400).send({ error: "Invalid game type" });
     return;
   }
 
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
+  const rawTimeRange = req.query.timeRange as string;
+  const timeRange: TimeRange = VALID_TIME_RANGES.includes(rawTimeRange as TimeRange)
+    ? (rawTimeRange as TimeRange)
+    : "overall";
 
   try {
-    const result = await getLeaderboard(gameType, page, limit);
+    const result = await getLeaderboard(gameType, page, limit, timeRange);
     res.send(result);
   } catch (error) {
     res.status(500).send({ error: "Failed to retrieve leaderboard" });
@@ -36,17 +46,14 @@ export const getByGameType: RestAPI<
 };
 
 /**
-
  * Get leaderboard stats for a specific user and game type
- * @param req The request with username and game type as parameters
- * @param res The response containing user leaderboard stats or null
  */
 export const getUserStats: RestAPI<
   LeaderboardEntry | null,
   { username: string; gameType: GameKey }
 > = async (req, res) => {
   const { username, gameType } = req.params;
-  if (!["nim", "guess"].includes(gameType)) {
+  if (!VALID_GAME_TYPES.includes(gameType)) {
     res.status(400).send({ error: "Invalid game type" });
     return;
   }
