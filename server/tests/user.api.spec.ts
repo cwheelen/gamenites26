@@ -21,6 +21,7 @@ describe("GET /api/user/:id", () => {
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual({
       ...user1,
+      privacy: "public",
       createdAt: expect.anything(),
       lastOnline: expect.anything(),
     });
@@ -29,6 +30,7 @@ describe("GET /api/user/:id", () => {
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual({
       ...user2,
+      privacy: "public",
       createdAt: expect.anything(),
       lastOnline: expect.anything(),
     });
@@ -66,6 +68,7 @@ describe("POST /api/user/login", () => {
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual({
       ...user1,
+      privacy: "public",
       createdAt: expect.anything(),
       lastOnline: expect.anything(),
     });
@@ -101,6 +104,7 @@ describe("POST/api/user/:username", () => {
     expect(response.body).toStrictEqual({
       ...user1,
       display: "New User 1 Display",
+      privacy: "public",
       createdAt: expect.anything(),
       lastOnline: expect.anything(),
     });
@@ -113,6 +117,7 @@ describe("POST/api/user/:username", () => {
     expect(response.body).toStrictEqual({
       ...user1,
       display: "New User 1 Display",
+      privacy: "public",
       createdAt: expect.anything(),
       lastOnline: expect.anything(),
     });
@@ -125,6 +130,7 @@ describe("POST/api/user/:username", () => {
     expect(response.body).toStrictEqual({
       ...user1,
       display: "New User 1 Display",
+      privacy: "public",
       createdAt: expect.anything(),
       lastOnline: expect.anything(),
     });
@@ -146,6 +152,7 @@ describe("POST/api/user/:username", () => {
     expect(response.body).toStrictEqual({
       ...user1,
       display: "Newer User 1 Display",
+      privacy: "public",
       createdAt: expect.anything(),
       lastOnline: expect.anything(),
     });
@@ -163,6 +170,7 @@ describe("POST /api/user/signup", () => {
     expect(response.body).toStrictEqual({
       username,
       display: username,
+      privacy: "public",
       createdAt: expect.anything(),
       lastOnline: expect.anything(),
     });
@@ -218,8 +226,8 @@ describe("POST /api/user/list", () => {
     response = await supertest(app).post("/api/user/list").send(["user2", "user1"]);
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual([
-      { ...user2, createdAt: expect.anything(), lastOnline: expect.anything() },
-      { ...user1, createdAt: expect.anything(), lastOnline: expect.anything() },
+      { ...user2, createdAt: expect.anything(), lastOnline: expect.anything(), privacy: "public" },
+      { ...user1, createdAt: expect.anything(), lastOnline: expect.anything(), privacy: "public" },
     ]);
   });
 
@@ -227,9 +235,9 @@ describe("POST /api/user/list", () => {
     response = await supertest(app).post("/api/user/list").send(["user1", "user2", "user1"]);
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual([
-      { ...user1, createdAt: expect.anything(), lastOnline: expect.anything() },
-      { ...user2, createdAt: expect.anything(), lastOnline: expect.anything() },
-      { ...user1, createdAt: expect.anything(), lastOnline: expect.anything() },
+      { ...user1, createdAt: expect.anything(), lastOnline: expect.anything(), privacy: "public" },
+      { ...user2, createdAt: expect.anything(), lastOnline: expect.anything(), privacy: "public" },
+      { ...user1, createdAt: expect.anything(), lastOnline: expect.anything(), privacy: "public" },
     ]);
   });
 });

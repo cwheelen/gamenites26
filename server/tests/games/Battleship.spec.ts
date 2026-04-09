@@ -194,17 +194,23 @@ describe("Battleship update() — shooting", () => {
       }
     }
 
-    for (const [row, col] of cellsToSink) {
-      if (state.phase === "done") break;
+    let i = 0;
+    while (i < cellsToSink.length) {
+      const [row, col] = cellsToSink[i];
       const shooter = state.nextPlayer;
       if (shooter === 0) {
         state = battleshipLogic.update(state, { type: "shoot", row, col }, 0)!;
+        i++; // only advance once player 0 has shot the target
       } else {
         // Player 1 shoots somewhere harmless to give turn back to player 0
-        const safeRow = 9;
-        const safeCol = state.boards[0].shotsReceived[safeRow].findIndex((v) => !v);
-        if (safeCol >= 0) {
-          state = battleshipLogic.update(state, { type: "shoot", row: safeRow, col: safeCol }, 1)!;
+        // Search from row 9 upward so we stay away from player 0's ships (rows 0-4)
+        let safeShotMade = false;
+        for (let r = BOARD_SIZE - 1; r >= 0 && !safeShotMade; r--) {
+          const c = state.boards[0].shotsReceived[r].findIndex((v) => !v);
+          if (c >= 0) {
+            state = battleshipLogic.update(state, { type: "shoot", row: r, col: c }, 1)!;
+            safeShotMade = true;
+          }
         }
       }
     }
