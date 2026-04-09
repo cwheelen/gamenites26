@@ -86,6 +86,21 @@ export interface DirectMessageRecord {
   userB: string; // alphabetically second username
   chatId: RecordId; // References Chat records
   createdAt: DateISO;
+  lastUpdated: DateISO;
+}
+
+/**
+ * Represents the information about a DM conversation that the server sends to
+ * clients. This is derived from DirectMessageRecord but with some fields
+ * renamed or converted to be more convenient for client use.
+ */
+export interface GroupChatRecord {
+  title: string;
+  members: string[]; // usernames of group members
+  chatId: RecordId; // References Chat records
+  createdBy: string; // username of the user who created the group chat
+  createdAt: DateISO;
+  lastUpdated: DateISO;
 }
 
 /**
@@ -98,7 +113,7 @@ export interface DirectMessageRecord {
 export interface FriendRecord {
   from: string; // username of sender
   to: string; // username of receiver
-  status: "pending" | "accepted";
+  status: "pending" | "accepted" | "rejected";
   createdAt: DateISO;
 }
 
@@ -167,11 +182,13 @@ export interface ThreadRecord {
  * Represents a user document in the database.
  * - `password`: user's password
  * - `display`: A display name
+ * - `privacy`: the user's privacy setting
  * - `createdAt`: when this user registered.
  */
 export interface UserRecord {
   username: string; // References Auth records
   display: string;
+  privacy: "public" | "friends";
   createdAt: DateISO;
   lastOnline: DateISO;
 }

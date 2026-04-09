@@ -36,21 +36,39 @@ export default function Layout() {
       ),
       {
         position: "bottom-right",
+        style: {
+          padding: "0px",
+          margin: "0px",
+          borderRadius: "0px",
+          background: "transparent",
+          border: "none",
+          boxShadow: "none",
+        },
         duration: Infinity,
       },
     );
   }, [pendingInvite, navigate, dismiss]);
 
   return (
-    <>
-      <div id="main" className="main">
-        <Header />
-        <SideBarNav />
-        <div id="right_main" className="right_main">
-          <Outlet />
-        </div>
+    <div id="main" className="main">
+      <Header />
+      <SideBarNav />
+      <div id="right_main" className="right_main">
+        <Outlet />
       </div>
-      <Toaster position="bottom-right" />
-    </>
+      <Toaster
+        position="bottom-right"
+        containerStyle={{ margin: 0 }}
+        toastOptions={{
+          style: {
+            padding: "0px",
+            margin: "0px",
+            borderRadius: "0.5rem",
+            background: "#333",
+            color: "#fff",
+          },
+        }}
+      />
+    </div>
   );
 }

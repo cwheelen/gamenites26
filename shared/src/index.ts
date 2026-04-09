@@ -18,6 +18,8 @@ export * from "./message.types.ts";
 export * from "./socket.types.ts";
 export * from "./thread.types.ts";
 export * from "./user.types.ts";
+export * from "./group.types.ts";
+export * from "./invite.type.ts";
 
 // this export had to be a little different because of the API
 export {
@@ -30,4 +32,3 @@ export {
   type CreateFriend,
   zCreateFriend,
 } from "./friends.type.ts";
-export * from "./invite.type.ts";

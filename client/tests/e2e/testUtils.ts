@@ -53,7 +53,7 @@ export async function createAndLoadGame(
   await page1.getByRole("button", { name: "Create New Game" }).click();
   await page1.waitForURL("/game/new");
   await page1.getByLabel("Game selection").selectOption(gameId);
-  await page1.getByRole("button", { name: "Create New Game" }).click();
+  await page1.getByTestId("submit-game-form").click();
 
   // Causes Playwright to auto-wait for for game to be enabled
   await page1.getByPlaceholder("Send a message to chat").click();
@@ -114,7 +114,8 @@ export async function createAndLoadGame(
       await expect(page2.getByRole("button", { name: "Start Game" })).toBeVisible();
     }
 
-    await page1.getByRole("button", { name: "Start Game" }).click();
+    await page1.getByTestId("start-game").waitFor({ state: "visible" });
+    await page1.getByTestId("start-game").click();
   }
 
   if (doAssess) {

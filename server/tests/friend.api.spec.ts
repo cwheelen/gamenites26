@@ -64,12 +64,14 @@ describe("GET /api/friend/:id", () => {
         {
           username: expect.any(String),
           display: expect.any(String),
+          privacy: "public",
           createdAt: expect.anything(),
           lastOnline: expect.anything(),
         },
         {
           username: expect.any(String),
           display: expect.any(String),
+          privacy: "public",
           createdAt: expect.anything(),
           lastOnline: expect.anything(),
         },

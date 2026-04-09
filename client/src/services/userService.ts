@@ -64,6 +64,18 @@ export const getUserById = async (username: string): APIResponse<SafeUserInfo> =
   }
 };
 
+/**
+ * Returns all users whose privacy is set to "public".
+ */
+export const getPublicUsers = async (): APIResponse<SafeUserInfo[]> => {
+  try {
+    const res = await api.get<SafeUserInfo[] | ErrorMsg>(`${USER_API_URL}/public`);
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};
+
 export const getUserStatusByUsername = async (
   username: string,
 ): APIResponse<{ status: "online" | "offline"; lastOnline: Date }> => {

@@ -11,6 +11,7 @@ import {
   acceptFriendRequest,
   getFriendList,
   getFriendshipStatus,
+  rejectFriendRequest,
 } from "../services/friend.service.ts";
 import type { RestAPI } from "../types.ts";
 
@@ -43,12 +44,12 @@ export const postRequest: RestAPI<FriendRequestInfo> = async (req, res) => {
 };
 
 /**
- * POST /api/myFriend/accept
+ * PUT /api/myFriend/accept
  *
  * Accept a pending friend request.
  * Body: { auth: UserAuth, payload: { requestId: string } }
  */
-export const postAccept: RestAPI<FriendRequestInfo> = async (req, res) => {
+export const putAccept: RestAPI<FriendRequestInfo> = async (req, res) => {
   const body = withAuth(zFriendAcceptPayload).safeParse(req.body);
   if (!body.success) {
     res.status(400).send({ error: "Poorly-formed request" });
@@ -62,6 +63,35 @@ export const postAccept: RestAPI<FriendRequestInfo> = async (req, res) => {
   }
 
   const result = await acceptFriendRequest(body.data.payload.requestId, user.username);
+  if ("error" in result) {
+    res.status(400).send(result);
+    return;
+  }
+
+  res.send(result);
+};
+
+/**
+ * PUT /api/myFriend/reject
+ *
+ * Rejecting a pending friend request.
+ * Body: { auth: UserAuth, payload: { requestId: string } }
+ */
+export const putReject: RestAPI<FriendRequestInfo> = async (req, res) => {
+  const body = withAuth(zFriendAcceptPayload).safeParse(req.body);
+
+  if (!body.success) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const user = await checkAuth(body.data.auth);
+  if (!user) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+
+  const result = await rejectFriendRequest(body.data.payload.requestId, user.username);
   if ("error" in result) {
     res.status(400).send(result);
     return;

@@ -32,12 +32,9 @@ export default function useNewGameForm() {
     setErr(null);
     const newKey = e.target.value as GameKey | "";
     setGameKey(newKey);
-    if (newKey === "" || !botSupportedGames.has(newKey)) {
-      setGameMode("player");
-    }
-    if (newKey !== "guess") {
-      setNumBots(1);
-    }
+    // Always reset mode to player when the game selection changes
+    setGameMode("player");
+    setNumBots(1);
   };
 
   const handleModeChange = (mode: GameMode) => {

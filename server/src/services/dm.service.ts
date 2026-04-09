@@ -2,6 +2,9 @@ import type { DirectMessageInfo } from "@gamenite/shared";
 import { DirectMessageRepo } from "../repository.ts";
 import { createChat } from "./chat.service.ts";
 import { eitherBlocked } from "./block.service.ts";
+import { getUserByUsername } from "./auth.service.ts";
+import { populateSafeUserInfo } from "./user.service.ts";
+import { getFriendshipStatus } from "./friend.service.ts";
 
 /**
  * Returns a stable key for a pair of usernames by sorting them
@@ -10,6 +13,26 @@ import { eitherBlocked } from "./block.service.ts";
  */
 function sortedPair(a: string, b: string): [string, string] {
   return a < b ? [a, b] : [b, a];
+}
+
+/**
+ * Convert a stored DM record into a DirectMessageInfo object safe for sending to clients.
+ *
+ * @param dmId - The database key for the DM record
+ * @returns A populated DirectMessageInfo object
+ * @throws If either user referenced by the record does not exist
+ */
+async function populateDMInfo(dmId: string): Promise<DirectMessageInfo> {
+  const dm = await DirectMessageRepo.get(dmId);
+  return {
+    dmId,
+    chatId: dm.chatId,
+    userA: dm.userA,
+    userB: dm.userB,
+    lastUpdated: dm.lastUpdated
+      ? new Date(dm.lastUpdated).toISOString()
+      : new Date(dm.createdAt).toISOString(),
+  };
 }
 
 /**
@@ -29,6 +52,18 @@ export async function getOrCreateDM(
     return { error: "You cannot message this user" };
   }
 
+  // Enforce privacy: if usernameB only accepts messages from friends, verify friendship
+  const userBAuth = await getUserByUsername(usernameB);
+  if (userBAuth) {
+    const userBInfo = await populateSafeUserInfo(userBAuth.userId);
+    if (userBInfo.privacy === "friends") {
+      const friendship = await getFriendshipStatus(usernameA, usernameB);
+      if (!friendship || friendship.status !== "accepted") {
+        return { error: "This user only accepts messages from friends" };
+      }
+    }
+  }
+
   const [userA, userB] = sortedPair(usernameA, usernameB);
 
   // Search for an existing DM between these two users
@@ -36,7 +71,15 @@ export async function getOrCreateDM(
   for (const key of allKeys) {
     const record = await DirectMessageRepo.get(key);
     if (record.userA === userA && record.userB === userB) {
-      return { dmId: key, chatId: record.chatId, userA, userB };
+      return {
+        dmId: key,
+        chatId: record.chatId,
+        userA,
+        userB,
+        lastUpdated: record.lastUpdated
+          ? new Date(record.lastUpdated).toISOString()
+          : new Date(record.createdAt).toISOString(),
+      };
     }
   }
 
@@ -47,7 +90,25 @@ export async function getOrCreateDM(
     userB,
     chatId: chat.chatId,
     createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString(),
   });
 
-  return { dmId, chatId: chat.chatId, userA, userB };
+  return { dmId, chatId: chat.chatId, userA, userB, lastUpdated: new Date().toISOString() };
+}
+
+export async function getMessages(username: string): Promise<DirectMessageInfo[]> {
+  const keys = await DirectMessageRepo.getAllKeys();
+  const unfiltered = await Promise.all(keys.map(populateDMInfo));
+  const unsorted = unfiltered.filter((dm: DirectMessageInfo) => {
+    return dm.userA === username || dm.userB === username;
+  });
+  return unsorted;
+}
+
+export async function getDMById(dmId: string): Promise<DirectMessageInfo | null> {
+  const dmInfo = await DirectMessageRepo.find(dmId);
+  if (!dmInfo) {
+    return null;
+  }
+  return populateDMInfo(dmId);
 }

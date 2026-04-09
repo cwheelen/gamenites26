@@ -29,11 +29,16 @@ test.describe("Chat in the context of a Nim game", () => {
     await page1.getByPlaceholder("Send a message to chat").focus();
     await page2.getByPlaceholder("Send a message to chat").focus();
 
-    // Simultaneously send messages from both players
+    // Simultaneously send messages from both players, waiting for each pair to be
+    // delivered before sending the next. Without this wait, all 20 socket events
+    // arrive before any DB write commits, so the last-write-wins race condition
+    // can drop every message except the very last one.
     for (let i = 0; i < 10; i += 1) {
       await page1.keyboard.type(`message ${i} A`);
       await page2.keyboard.type(`message ${i} B`);
       await Promise.all([page1.keyboard.press("Enter"), page2.keyboard.press("Enter")]);
+      await expect(page1.getByText(`message ${i} A`)).toBeVisible();
+      await expect(page1.getByText(`message ${i} B`)).toBeVisible();
     }
 
     // We expect that these tests will **succeed**

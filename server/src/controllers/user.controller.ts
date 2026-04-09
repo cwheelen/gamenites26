@@ -1,6 +1,7 @@
 import { type SafeUserInfo, withAuth, zUserAuth, zUserUpdateRequest } from "@gamenite/shared";
 import {
   createUser,
+  getAllPublicUsers,
   getStatus,
   getUsersByUsername,
   populateSafeUserInfo,
@@ -82,6 +83,13 @@ export const getByUsername: RestAPI<SafeUserInfo, { username: string }> = async 
     return;
   }
   res.send(await populateSafeUserInfo(user.userId));
+};
+
+/**
+ * Returns all users with privacy set to "public".
+ */
+export const getPublicUsers: RestAPI<SafeUserInfo[]> = async (_req, res) => {
+  res.send(await getAllPublicUsers());
 };
 
 /**

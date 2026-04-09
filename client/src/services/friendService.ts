@@ -1,6 +1,7 @@
 import type { APIResponse } from "../util/types.ts";
 import { api, exceptionToErrorMsg } from "./api.ts";
-import type { ErrorMsg, FriendListInfo, FriendRequestInfo, UserAuth } from "@gamenite/shared";
+import type { ErrorMsg, FriendRequestInfo, UserAuth } from "@gamenite/shared";
+import type { FriendListInfo } from "@gamenite/shared/src/friend.types.ts";
 
 const FRIEND_API_URL = `/api/myFriend`;
 
@@ -27,7 +28,7 @@ export const sendFriendRequest = async (
 };
 
 /**
- * Sends a POST request to accept a pending friend request.
+ * Sends a PUT request to accept a pending friend request.
  *
  * @param auth - The authenticated user's credentials
  * @param requestId - The ID of the friend request to accept
@@ -38,7 +39,29 @@ export const acceptFriendRequest = async (
   requestId: string,
 ): APIResponse<FriendRequestInfo> => {
   try {
-    const res = await api.post<FriendRequestInfo | ErrorMsg>(`${FRIEND_API_URL}/accept`, {
+    const res = await api.put<FriendRequestInfo | ErrorMsg>(`${FRIEND_API_URL}/accept`, {
+      auth,
+      payload: { requestId },
+    });
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};
+
+/**
+ * Sends a PUT request to reject a pending friend request.
+ *
+ * @param auth - The authenticated user's credentials
+ * @param requestId - The ID of the friend request to accept
+ * @returns The updated FriendRequestInfo, or an error message
+ */
+export const rejectFriendRequest = async (
+  auth: UserAuth,
+  requestId: string,
+): APIResponse<FriendRequestInfo> => {
+  try {
+    const res = await api.put<FriendRequestInfo | ErrorMsg>(`${FRIEND_API_URL}/reject`, {
       auth,
       payload: { requestId },
     });
