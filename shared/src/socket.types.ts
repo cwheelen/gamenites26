@@ -43,6 +43,7 @@ export interface ClientToServerEvents {
   gamePause: (payload: WithAuth<string>) => void;
   /** Signal that the authenticated player is back (resumes the game) */
   gameResume: (payload: WithAuth<string>) => void;
+  gameForfeit: (payload: WithAuth<string>) => void; //gameId
 }
 
 /**
@@ -68,4 +69,5 @@ export interface ServerToClientEvents {
   gamePauseStateChanged: (payload: GamePauseStatePayload) => void;
   /** Broadcast when a paused player's timeout expires and they are forfeited */
   gameTimedOut: (payload: { gameId: string; forfeitedPlayer: string }) => void;
+  gameForfeited: (payload: { gameId: string; forfeitingPlayer: string }) => void;
 }

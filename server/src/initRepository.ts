@@ -5,9 +5,12 @@ import {
   BlockRepo,
   ChatRepo,
   CommentRepo,
+  DirectMessageRepo,
   FriendRequestRepo,
   FriendshipRepo,
   GameRepo,
+  GroupChatRepo,
+  InviteRepo,
   LeaderboardRepo,
   MessageRepo,
   ThreadRepo,
@@ -313,6 +316,9 @@ export async function resetEverythingToDefaults() {
   await UserRepo.clear();
   await FriendshipRepo.clear();
   await FriendRequestRepo.clear();
+  await DirectMessageRepo.clear();
+  await GroupChatRepo.clear();
+  await InviteRepo.clear();
 
   await resetStoredUsers();
   await resetStoredThreads();

@@ -16,6 +16,7 @@ import * as friend from "./controllers/friends.controller.ts";
 import * as myFriend from "./controllers/friend.controller.ts";
 import * as invite from "./controllers/invite.controller.ts";
 import * as group from "./controllers/group.controller.ts";
+import * as forfeit from "./controllers/forfeit.controller.ts";
 import { type GameServer } from "./types.ts";
 import { unregisterAndEmitOffline } from "./services/presence.service.ts";
 
@@ -142,6 +143,7 @@ io.on("connection", (socket) => {
   // Pause / away notification
   socket.on("gamePause", pause.socketPause(socket, io));
   socket.on("gameResume", pause.socketResume(socket, io));
+  socket.on("gameForfeit", forfeit.socketForfeit(socket, io));
 
   socket.onAny((name, payload) => {
     const zPayload = z.object({ auth: z.object({ username: z.string() }), payload: z.any() });

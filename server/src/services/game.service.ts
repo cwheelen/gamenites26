@@ -439,6 +439,35 @@ export async function updateGame(
   };
 }
 
+/**
+ * Forfeits a game on behalf of the given user.
+ * The forfeiting player loses; all other non-bot players win.
+ * Throws if the game doesn't exist, hasn't started, is already done,
+ * or the user is not an active player.
+ *
+ * @returns the username of the forfeiting player, for broadcast purposes.
+ */
+export async function forfeitGame(gameId: string, user: UserWithId): Promise<string> {
+  const game = await GameRepo.find(gameId);
+  if (!game) throw new Error(`${user.username} forfeited an invalid game`);
+  if (!game.state) throw new Error(`${user.username} forfeited a game that hasn't started`);
+  if (game.done) throw new Error(`${user.username} forfeited a game that is already done`);
+
+  const forfeitedIndex = game.players.findIndex((id) => id === user.userId);
+  if (forfeitedIndex < 0) throw new Error(`${user.username} forfeited a game they aren't in`);
+
+  game.done = true;
+  await GameRepo.set(gameId, game);
+
+  for (let i = 0; i < game.players.length; i++) {
+    const playerId = game.players[i];
+    if (BOT_IDS.has(playerId)) continue;
+    await updateLeaderboard(playerId, game.type, i !== forfeitedIndex);
+  }
+
+  return user.username;
+}
+
 export async function viewGame(gameId: string, user: UserWithId) {
   const game = await GameRepo.find(gameId);
   if (!game) throw new Error(`user ${user.username} viewed an invalid game id`);

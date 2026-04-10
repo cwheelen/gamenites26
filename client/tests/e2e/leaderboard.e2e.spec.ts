@@ -8,7 +8,7 @@ const selectors = {
   paginationPrev: 'button:has-text("Previous")',
   paginationNext: 'button:has-text("Next")',
   timeRangeSelect: "#timeRangeSelect",
-  pointsToNext: 'div:has-text("You need")',
+  pointsToNext: 'div:has-text("You need"):not(:has(div))',
 };
 
 let userContext1: BrowserContext;
@@ -21,10 +21,7 @@ test.beforeEach(async ({ browser }) => {
   await logInUser(page1, "user1", "pwd1111");
   await page1.getByRole("link", { name: /leaderboard/i }).click();
   await page1.waitForURL("**/leaderboard");
-  const loading = page1.getByText("Loading...");
-  if (await loading.count()) {
-    await expect(loading).toBeHidden();
-  }
+  await page1.getByText("Loading...").first().waitFor({ state: "hidden" });
 });
 
 test.afterEach(async () => {
@@ -76,10 +73,7 @@ test.describe("Leaderboard Page", () => {
     await select.selectOption("daily");
     await expect(select).toHaveValue("daily");
 
-    const loading = page1.getByText("Loading...");
-    if (await loading.count()) {
-      await expect(loading).toBeHidden();
-    }
+    await page1.getByText("Loading...").first().waitFor({ state: "hidden" });
 
     await expect(page1.locator(selectors.leaderboardTable)).toBeVisible();
   });

@@ -7,6 +7,7 @@ import ChatPanel from "../components/ChatPanel.tsx";
 import GamePanel from "../components/GamePanel.tsx";
 import usePause from "../hooks/usePause.ts";
 import useLoginContext from "../hooks/useLoginContext.ts";
+import useForfeit from "../hooks/useForfeit.ts";
 
 function PauseBanner({
   pausedBy,
@@ -72,6 +73,8 @@ export default function Game() {
 
   const isPlayer = game?.players.some((p) => p.username === user.username) ?? false;
   const { isPaused, pausedBy, secondsLeft, iAmPaused, pause, resume } = usePause(gameId!, isPlayer);
+  const { forfeit } = useForfeit(gameId!, isPlayer);
+  const [confirmForfeit, setConfirmForfeit] = useState(false);
 
   if (!game) return null;
 
@@ -100,6 +103,27 @@ export default function Game() {
               ▶ I'm Back
             </button>
           ) : null}
+          {!confirmForfeit ? (
+            <button className="danger narrow" onClick={() => setConfirmForfeit(true)}>
+              🏳 Forfeit
+            </button>
+          ) : (
+            <>
+              <span>Are you sure?</span>
+              <button
+                className="danger narrow"
+                onClick={() => {
+                  forfeit();
+                  setConfirmForfeit(false);
+                }}
+              >
+                Yes, forfeit
+              </button>
+              <button className="secondary narrow" onClick={() => setConfirmForfeit(false)}>
+                Cancel
+              </button>
+            </>
+          )}
         </div>
       )}
 
