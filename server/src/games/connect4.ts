@@ -100,9 +100,9 @@ export const connect4Logic: GameLogic<Connect4State, Connect4View> = {
   describeMove: (prevState, newState, movePayload, playerIndex) => {
     const col = zConnect4Move.parse(movePayload);
     if (newState.winner !== null) {
-      return `player ${playerIndex + 1} dropped a token in column ${col + 1} and won!`;
+      return ` dropped a token in column ${col + 1} and won!`;
     }
-    return `player ${playerIndex + 1} dropped a token in column ${col + 1}`;
+    return ` dropped a token in column ${col + 1}`;
   },
 
   getWinners: ({ winner }) => {
