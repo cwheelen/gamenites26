@@ -83,10 +83,10 @@ endpoints in `server/src/app.ts`.
 
 #### `/api/leaderboard`
 
-| Endpoint                      | Method | Description                                     |
-| ----------------------------- | ------ | ----------------------------------------------- |
-| `/:gametype`                  | GET    | Get Leaderboard rankings for a gametype         |
-| `/user/:username/:gameType`   | GET    | Get Learerboard stats for a user for a gametype |
+| Endpoint                    | Method | Description                                     |
+| --------------------------- | ------ | ----------------------------------------------- |
+| `/:gametype`                | GET    | Get Leaderboard rankings for a gametype         |
+| `/user/:username/:gameType` | GET    | Get Learerboard stats for a user for a gametype |
 
 #### `/api/thread`
 
@@ -112,13 +112,13 @@ endpoints in `server/src/app.ts`.
 
 #### `/api/myFriend`
 
-| Endpoint                        | Method | Description                            |
-| ------------------------------- | ------ | -------------------------------------- |
-| `/request`                      | POST   | Create a Friend Request                |
-| `/accept`                       | PUT    | Accept a friend Request and set friends|
-| `/reject`                       | PUT    | Rejects a friend Request               |
-| `/list/:username`               | GET    | Get all of a users friends             |
-| `/status/:usernameA/:usernameB` | GET    | Gets all users with Privacy public     |
+| Endpoint                        | Method | Description                             |
+| ------------------------------- | ------ | --------------------------------------- |
+| `/request`                      | POST   | Create a Friend Request                 |
+| `/accept`                       | PUT    | Accept a friend Request and set friends |
+| `/reject`                       | PUT    | Rejects a friend Request                |
+| `/list/:username`               | GET    | Get all of a users friends              |
+| `/status/:usernameA/:usernameB` | GET    | Gets all users with Privacy public      |
 
 #### `/api/dm`
 
