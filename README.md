@@ -81,6 +81,13 @@ endpoints in `server/src/app.ts`.
 | `/list`   | GET    | List all games                        |
 | `/:id`    | GET    | Get information about a specific game |
 
+#### `/api/leaderboard`
+
+| Endpoint                      | Method | Description                                     |
+| ----------------------------- | ------ | ----------------------------------------------- |
+| `/:gametype`                  | GET    | Get Leaderboard rankings for a gametype         |
+| `/user/:username/:gameType`   | GET    | Get Learerboard stats for a user for a gametype |
+
 #### `/api/thread`
 
 | Endpoint       | Method | Description                       |
@@ -92,13 +99,60 @@ endpoints in `server/src/app.ts`.
 
 #### `/api/user`
 
-| Endpoint     | Method | Description                           |
-| ------------ | ------ | ------------------------------------- |
-| `/list`      | POST   | Get details of a list of users        |
-| `/login`     | POST   | Validate username/password entry      |
-| `/signup`    | POST   | Create a new user                     |
-| `/:username` | POST   | Update user's displayname or password |
-| `/:username` | GET    | Get information about a user          |
+| Endpoint            | Method | Description                           |
+| ------------------- | ------ | ------------------------------------- |
+| `/list`             | POST   | Get details of a list of users        |
+| `/login`            | POST   | Validate username/password entry      |
+| `/signup`           | POST   | Create a new user                     |
+| `/signup`           | POST   | Create a new user                     |
+| `/:username`        | POST   | Update user's displayname or password |
+| `/public`           | GET    | Gets all users with Privacy public    |
+| `/:username/status` | GET    | Gets the online status of a user      |
+| `/:username`        | GET    | Get information about a user          | 
+
+#### `/api/myFriend`
+
+| Endpoint                        | Method | Description                            |
+| ------------------------------- | ------ | -------------------------------------- |
+| `/request`                      | POST   | Create a Friend Request                |
+| `/accept`                       | PUT    | Accept a friend Request and set friends|
+| `/reject`                       | PUT    | Rejects a friend Request               |
+| `/list/:username`               | GET    | Get all of a users friends             |
+| `/status/:usernameA/:usernameB` | GET    | Gets all users with Privacy public     |
+
+#### `/api/dm`
+
+| Endpoint          | Method | Description                            |
+| ----------------- | ------ | -------------------------------------- |
+| `/open`           | POST   | Open a direct message                  |
+| `/list/:username` | GET    | Get all of a users messages            |
+| `/:id`            | GET    | Gets a users direct messages with Auth |
+
+#### `/api/group`
+
+| Endpoint          | Method | Description                        |
+| ----------------- | ------ | ---------------------------------- |
+| `/create`         | POST   | Create a group chat instance       |
+| `/update`         | PUT    | Update the details of a group chat |
+| `/list/:username` | GET    | Get all of a users group chats     |
+| `/:id`            | GET    | Gets a group chat by id            |
+
+#### `/api/block`
+
+| Endpoint                                  | Method | Description                               |
+| ----------------------------------------- | ------ | ----------------------------------------- |
+| `/block`                                  | POST   | Block another user                        |
+| `/unblock`                                | POST   | Unblock another user                      |
+| `/status/:viewerUsername/:targetUsername` | GET    | Get the status of block between two users |
+
+#### `/api/invite`
+
+| Endpoint          | Method | Description                               |
+| ----------------- | ------ | ----------------------------------------- |
+| `/create`         | POST   | Create a game invite                      |
+| `/update `        | PUT    | Update a game invite with status          |
+| `/list/:username` | GET    | Get the list of active invites for a user |
+| `/:id`            | GET    | Get a game invite by id                   |
 
 ### Websockets
 
