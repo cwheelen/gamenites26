@@ -28,5 +28,11 @@ const BOTS = [
 ];
 
 for (const { id, display } of BOTS) {
-  await UserRepo.set(id, { username: id, display, createdAt: NOW, lastOnline: NOW });
+  await UserRepo.set(id, {
+    username: id,
+    display,
+    privacy: "friends",
+    createdAt: NOW,
+    lastOnline: NOW,
+  });
 }

@@ -17,7 +17,7 @@ import type { GameRecord, ThreadRecord, FriendshipRecord } from "./models.ts";
 import { createChat } from "./services/chat.service.ts";
 import { createUser, updateUser } from "./services/user.service.ts";
 import { createFriendRequest } from "./services/friendRequest.service.ts";
-import { updateLeaderboard } from "./services/leaderboard.service.ts";
+// import { updateLeaderboard } from "./services/leaderboard.service.ts";
 import { CONNECT_4_BOT_USER_ID } from "./games/connect4.ts";
 import { CHECKERS_BOT_USER_ID } from "./games/checkers.ts";
 import { BATTLESHIP_BOT_USER_ID } from "./games/battleship.ts";
@@ -122,30 +122,35 @@ async function resetStoredUsers() {
   await UserRepo.set(CONNECT_4_BOT_USER_ID, {
     username: CONNECT_4_BOT_USER_ID,
     display: "Connect4 Bot",
+    privacy: "friends",
     createdAt: botCreatedAt,
     lastOnline: botCreatedAt,
   });
   await UserRepo.set(CHECKERS_BOT_USER_ID, {
     username: CHECKERS_BOT_USER_ID,
     display: "Checkers Bot",
+    privacy: "friends",
     createdAt: botCreatedAt,
     lastOnline: botCreatedAt,
   });
   await UserRepo.set(BATTLESHIP_BOT_USER_ID, {
     username: BATTLESHIP_BOT_USER_ID,
     display: "Battleship Bot",
+    privacy: "friends",
     createdAt: botCreatedAt,
     lastOnline: botCreatedAt,
   });
   await UserRepo.set(NIM_BOT_USER_ID, {
     username: NIM_BOT_USER_ID,
     display: "Nim Bot",
+    privacy: "friends",
     createdAt: botCreatedAt,
     lastOnline: botCreatedAt,
   });
   await UserRepo.set(NUMBER_GUESSER_BOT_USER_ID, {
     username: NUMBER_GUESSER_BOT_USER_ID,
     display: "Guess Bot",
+    privacy: "friends",
     createdAt: botCreatedAt,
     lastOnline: botCreatedAt,
   });

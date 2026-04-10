@@ -74,7 +74,7 @@ export default function GroupChatPage() {
       setErr(result.error);
     } else {
       // Successfully left the group, now redirect to messages list
-      navigate("/messages");
+      navigate("/dm");
     }
   };
 
