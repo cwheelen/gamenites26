@@ -1,7 +1,13 @@
 /* eslint-disable import/no-duplicates */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { getBotMove, CONNECT_4_BOT_USER_ID } from "../../src/games/connect4.ts";
 import { getCheckersBotMove, CHECKERS_BOT_USER_ID } from "../../src/games/checkers.ts";
+import {
+  getGuessBotMove,
+  NUMBER_GUESSER_BOT_USER_IDS,
+  NUMBER_GUESSER_BOT_USER_ID,
+} from "../../src/games/guess.ts";
+import { coinFlip } from "../../src/games/util.ts";
 import type { Connect4Token } from "@gamenite/shared";
 import type { CheckersBoard } from "@gamenite/shared";
 
@@ -117,5 +123,63 @@ describe("getCheckersBotMove (Checkers)", () => {
 
   it("CHECKERS_BOT_USER_ID is the expected sentinel string", () => {
     expect(CHECKERS_BOT_USER_ID).toBe("__checkers_bot__");
+  });
+});
+
+// guess bot
+
+describe("getGuessBotMove (Guess)", () => {
+  it("returns a number between 1 and 101 inclusive", () => {
+    const move = getGuessBotMove({ secret: 50, guesses: [null, null] });
+    expect(move).toBeGreaterThanOrEqual(1);
+    expect(move).toBeLessThanOrEqual(101);
+  });
+
+  it("returns an integer", () => {
+    const move = getGuessBotMove({ secret: 50, guesses: [null, null] });
+    expect(Number.isInteger(move)).toBe(true);
+  });
+
+  it("never repeats a guess already in the state", () => {
+    // Fill guesses 1–100, leaving only 101
+    const existingGuesses = Array.from({ length: 100 }, (_, i) => i + 1);
+    const move = getGuessBotMove({ secret: 50, guesses: existingGuesses });
+    expect(move).toBe(101);
+  });
+
+  it("NUMBER_GUESSER_BOT_USER_IDS exports 4 distinct IDs", () => {
+    expect(NUMBER_GUESSER_BOT_USER_IDS).toHaveLength(4);
+    expect(new Set(NUMBER_GUESSER_BOT_USER_IDS).size).toBe(4);
+  });
+
+  it("NUMBER_GUESSER_BOT_USER_ID is the first entry in NUMBER_GUESSER_BOT_USER_IDS", () => {
+    expect(NUMBER_GUESSER_BOT_USER_ID).toBe(NUMBER_GUESSER_BOT_USER_IDS[0]);
+  });
+});
+
+// util
+
+describe("coinFlip (util)", () => {
+  it("returns a boolean", () => {
+    expect(typeof coinFlip()).toBe("boolean");
+  });
+
+  it("returns both true and false across many flips", () => {
+    // With 200 flips the probability of all-same is astronomically small
+    const results = Array.from({ length: 200 }, coinFlip);
+    expect(results.some(Boolean)).toBe(true);
+    expect(results.some((v) => !v)).toBe(true);
+  });
+
+  it("returns false when Math.random returns exactly 0.5 (boundary)", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.5);
+    expect(coinFlip()).toBe(false); // 0.5 < 0.5 is false
+    vi.restoreAllMocks();
+  });
+
+  it("returns true when Math.random returns less than 0.5", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.49);
+    expect(coinFlip()).toBe(true);
+    vi.restoreAllMocks();
   });
 });

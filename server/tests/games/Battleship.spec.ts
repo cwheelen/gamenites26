@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import { describe, expect, it } from "vitest";
-import { battleshipLogic } from "../../src/games/battleship.ts";
+import { battleshipLogic, getBattleshipBotPlacement, getBattleshipBotShot } from "../../src/games/battleship.ts";
 import type {
   BattleshipPlacingView,
   BattleshipShootingView,
@@ -10,7 +10,7 @@ import type {
   PlacedShip,
   PlayerBoardState,
 } from "@gamenite/shared";
-import { BOARD_SIZE, SHIPS } from "@gamenite/shared";
+import { BOARD_SIZE, SHIPS, shipInBounds, shipsOverlap } from "@gamenite/shared";
 
 const VALID_PLACEMENT: PlacedShip[] = [
   { name: "Carrier", size: 5, row: 0, col: 0, horizontal: true },
@@ -314,5 +314,70 @@ describe("Battleship getWinners()", () => {
       boards: [{ ...state.boards[0], shotsReceived: allShotBoard }, state.boards[1]],
     };
     expect(battleshipLogic.getWinners(doneState)).toStrictEqual([1]);
+  });
+});
+
+describe("getBattleshipBotPlacement()", () => {
+  it("returns exactly the required 5 ships", () => {
+    const placed = getBattleshipBotPlacement();
+    expect(placed).toHaveLength(SHIPS.length);
+    const placedNames = placed.map((s) => s.name).sort();
+    const expectedNames = SHIPS.map((s) => s.name).sort();
+    expect(placedNames).toStrictEqual(expectedNames);
+  });
+
+  it("places all ships within board bounds", () => {
+    const placed = getBattleshipBotPlacement();
+    expect(placed.every(shipInBounds)).toBe(true);
+  });
+
+  it("places ships with no overlaps", () => {
+    const placed = getBattleshipBotPlacement();
+    for (let i = 0; i < placed.length; i++) {
+      for (let j = i + 1; j < placed.length; j++) {
+        expect(shipsOverlap(placed[i], placed[j])).toBe(false);
+      }
+    }
+  });
+
+  it("returns a valid placement accepted by the game logic", () => {
+    const state = startState();
+    const result = battleshipLogic.update(
+      state,
+      { type: "place", ships: getBattleshipBotPlacement() },
+      0,
+    );
+    expect(result).not.toBeNull();
+    expect(result!.placementDone[0]).toBe(true);
+  });
+});
+
+describe("getBattleshipBotShot()", () => {
+  it("returns a cell that has not yet been shot", () => {
+    const state = shootingState();
+    const shot = getBattleshipBotShot(state, 0);
+    expect(state.boards[1].shotsReceived[shot.row][shot.col]).toBe(false);
+  });
+
+  it("returns a cell within board bounds", () => {
+    const state = shootingState();
+    const shot = getBattleshipBotShot(state, 0);
+    expect(shot.row).toBeGreaterThanOrEqual(0);
+    expect(shot.row).toBeLessThan(BOARD_SIZE);
+    expect(shot.col).toBeGreaterThanOrEqual(0);
+    expect(shot.col).toBeLessThan(BOARD_SIZE);
+  });
+
+  it("only returns the one remaining unshot cell when all others are taken", () => {
+    const state = shootingState();
+    // Mark every cell as shot except (9, 9)
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        if (r === 9 && c === 9) continue;
+        state.boards[1].shotsReceived[r][c] = true;
+      }
+    }
+    const shot = getBattleshipBotShot(state, 0);
+    expect(shot).toStrictEqual({ row: 9, col: 9 });
   });
 });
