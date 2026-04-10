@@ -47,18 +47,24 @@ export default function Game() {
   const { gameId } = useParams();
   const { user, socket } = useLoginContext();
   const [game, setGame] = useState<GameInfo | null>(null);
+  const [forfeitableGame, setForfeitableGame] = useState(false);
 
   useEffect(() => {
     let ignore = false;
     (async () => {
       const game = await getGameById(gameId!);
+
       if (ignore || "error" in game) return;
+      if (game.players.length === 2) {
+        const isPlayer = game.players.some((p) => p.username === user.username);
+        setForfeitableGame(isPlayer);
+      }
       setGame(game);
     })();
     return () => {
       ignore = true;
     };
-  }, [gameId]);
+  }, [gameId, user.username]);
 
   // Keep players list and status fresh when a new player joins
   useEffect(() => {
@@ -103,25 +109,29 @@ export default function Game() {
               ▶ I'm Back
             </button>
           ) : null}
-          {!confirmForfeit ? (
-            <button className="danger narrow" onClick={() => setConfirmForfeit(true)}>
-              🏳 Forfeit
-            </button>
-          ) : (
+          {forfeitableGame && (
             <>
-              <span>Are you sure?</span>
-              <button
-                className="danger narrow"
-                onClick={() => {
-                  forfeit();
-                  setConfirmForfeit(false);
-                }}
-              >
-                Yes, forfeit
-              </button>
-              <button className="secondary narrow" onClick={() => setConfirmForfeit(false)}>
-                Cancel
-              </button>
+              {!confirmForfeit ? (
+                <button className="danger narrow" onClick={() => setConfirmForfeit(true)}>
+                  🏳 Forfeit
+                </button>
+              ) : (
+                <>
+                  <span>Are you sure?</span>
+                  <button
+                    className="danger narrow"
+                    onClick={() => {
+                      forfeit();
+                      setConfirmForfeit(false);
+                    }}
+                  >
+                    Yes, forfeit
+                  </button>
+                  <button className="secondary narrow" onClick={() => setConfirmForfeit(false)}>
+                    Cancel
+                  </button>
+                </>
+              )}
             </>
           )}
         </div>
