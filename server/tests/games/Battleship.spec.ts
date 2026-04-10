@@ -1,7 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import { describe, expect, it } from "vitest";
-import { battleshipLogic, getBattleshipBotPlacement, getBattleshipBotShot } from "../../src/games/battleship.ts";
+import {
+  battleshipLogic,
+  getBattleshipBotPlacement,
+  getBattleshipBotShot,
+} from "../../src/games/battleship.ts";
 import type {
   BattleshipPlacingView,
   BattleshipShootingView,

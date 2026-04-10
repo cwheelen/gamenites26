@@ -1,4 +1,4 @@
-#### CI Pipeline Verified
+# CI Pipeline Verified
 
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/LS0tMb4M)
 The individual and team project for this class are designed to mirror the
@@ -68,7 +68,7 @@ mode by running `npm start -w=server` and accessed by going to
   client and server. This helps maintain consistency and reduces duplication
   of code between the two folders.
 
-## API Routes
+### API Routes
 
 The server provides the following REST endpoints: requests are routed to these
 endpoints in `server/src/app.ts`.
@@ -108,7 +108,7 @@ endpoints in `server/src/app.ts`.
 | `/:username`        | POST   | Update user's displayname or password |
 | `/public`           | GET    | Gets all users with Privacy public    |
 | `/:username/status` | GET    | Gets the online status of a user      |
-| `/:username`        | GET    | Get information about a user          | 
+| `/:username`        | GET    | Get information about a user          |
 
 #### `/api/myFriend`
 
@@ -150,7 +150,7 @@ endpoints in `server/src/app.ts`.
 | Endpoint          | Method | Description                               |
 | ----------------- | ------ | ----------------------------------------- |
 | `/create`         | POST   | Create a game invite                      |
-| `/update `        | PUT    | Update a game invite with status          |
+| `/update`         | PUT    | Update a game invite with status          |
 | `/list/:username` | GET    | Get the list of active invites for a user |
 | `/:id`            | GET    | Get a game invite by id                   |
 
